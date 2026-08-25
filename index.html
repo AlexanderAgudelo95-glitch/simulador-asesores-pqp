@@ -1277,6 +1277,17 @@ function finishScenario(){
       cierre: final.cierre,
       experienciaCliente: final.experiencia
     };
+    fetch("https://script.google.com/macros/s/AKfycbwtEEvWdyhUR37RYrl7s-Q-CXrjWvwWBGgC5Xd3tFIyp9T0vPG0CtfR0vHzuw1-7pyt/exec", {
+  method: "POST",
+  body: JSON.stringify(participantData)
+})
+.then(response => response.json())
+.then(data => {
+  console.log("Registro enviado:", data);
+})
+.catch(error => {
+  console.error("Error al enviar el registro:", error);
+});
   }
 
   renderResults(total, final, maxes, newBadges);
