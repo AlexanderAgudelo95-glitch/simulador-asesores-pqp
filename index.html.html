@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuimiCasa · Simulador de Ventas en Punto de Venta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#141B19;
+  --petrol-900:#0E2C29;
+  --petrol-800:#153C38;
+  --petrol-700:#1E4E48;
+  --petrol-100:#DCE7E4;
+  --paper:#EEF2F0;
+  --card:#FFFFFF;
+  --line:#D4DDD9;
+  --amber:#E29228;
+  --amber-dark:#B9741A;
+  --good:#3E8E5A;
+  --good-bg:#E4F2E9;
+  --bad:#C04A3E;
+  --bad-bg:#F7E6E3;
+  --neutral:#8A9490;
+  --font-display:'Space Grotesk',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+  --radius:10px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--paper);
+  background-image:
+    radial-gradient(circle at 100% 0%, rgba(30,78,72,0.06), transparent 45%),
+    radial-gradient(circle at 0% 100%, rgba(226,146,40,0.06), transparent 40%);
+  color:var(--ink);
+  font-family:var(--font-body);
+  min-height:100vh;
+  line-height:1.45;
+}
+h1,h2,h3,h4{font-family:var(--font-display); margin:0; letter-spacing:-0.01em;}
+p{margin:0;}
+button{font-family:var(--font-body); cursor:pointer;}
+.mono{font-family:var(--font-mono);}
+.hidden{display:none !important;}
+.app{max-width:1180px; margin:0 auto; padding:22px 20px 60px;}
+
+/* ---------- TOP BAR ---------- */
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 20px; background:var(--petrol-900); border-radius:var(--radius);
+  color:#fff; margin-bottom:22px;
+}
+.brand{display:flex; align-items:center; gap:10px;}
+.brand-mark{
+  width:34px; height:34px; border-radius:8px;
+  background:linear-gradient(135deg, var(--amber), #F2B45C);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-display); font-weight:700; color:var(--petrol-900); font-size:15px;
+}
+.brand-text .name{font-family:var(--font-display); font-weight:600; font-size:15px;}
+.brand-text .sub{font-size:11px; color:var(--petrol-100); text-transform:uppercase; letter-spacing:0.08em;}
+.player-chip{display:flex; align-items:center; gap:14px; font-size:12.5px;}
+.player-chip .stat{display:flex; flex-direction:column; align-items:flex-end;}
+.player-chip .stat .v{font-family:var(--font-mono); font-weight:600; font-size:14px;}
+.player-chip .stat .k{color:var(--petrol-100); font-size:10px; text-transform:uppercase; letter-spacing:.06em;}
+.level-badge{
+  background:var(--amber); color:var(--petrol-900); font-family:var(--font-mono); font-weight:600;
+  font-size:12px; padding:5px 10px; border-radius:20px;
+}
+
+/* ---------- SCREEN: HOME ---------- */
+.hero{
+  background:var(--petrol-900); color:#fff; border-radius:var(--radius);
+  padding:34px 30px; margin-bottom:20px; position:relative; overflow:hidden;
+}
+.hero::after{
+  content:""; position:absolute; right:-60px; top:-60px; width:260px; height:260px;
+  border-radius:50%; border:40px solid rgba(226,146,40,0.10);
+}
+.hero-eyebrow{font-family:var(--font-mono); font-size:11.5px; color:var(--amber); text-transform:uppercase; letter-spacing:.12em; margin-bottom:10px;}
+.hero h1{font-size:30px; max-width:640px; margin-bottom:10px;}
+.hero p{max-width:560px; color:var(--petrol-100); font-size:14.5px;}
+
+.section-title{display:flex; align-items:baseline; justify-content:space-between; margin:26px 0 12px;}
+.section-title h2{font-size:17px;}
+.section-title .hint{font-size:12px; color:var(--neutral);}
+
+.dash-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:6px;}
+.dash-card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px;}
+.dash-card .k{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--neutral); margin-bottom:6px;}
+.dash-card .v{font-family:var(--font-mono); font-size:22px; font-weight:600; color:var(--petrol-900);}
+.dash-card .v.small{font-size:15px;}
+
+.scenario-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+.scenario-card{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  padding:18px; display:flex; flex-direction:column; gap:10px; position:relative;
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.scenario-card.unlocked:hover{transform:translateY(-2px); box-shadow:0 8px 20px rgba(14,44,41,0.10);}
+.scenario-card.locked{opacity:.55;}
+.scenario-top{display:flex; align-items:center; justify-content:space-between;}
+.scenario-icon{
+  width:38px; height:38px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+  font-size:18px; background:var(--petrol-100);
+}
+.stars{font-size:11px; color:var(--amber-dark); font-family:var(--font-mono);}
+.scenario-card h3{font-size:16px;}
+.scenario-card .desc{font-size:12.5px; color:#4B5652;}
+.scenario-meta{font-size:11px; color:var(--neutral); display:flex; gap:10px; margin-top:2px;}
+.best-score{font-family:var(--font-mono); font-size:11.5px; color:var(--good); font-weight:600;}
+.btn{
+  border:none; border-radius:8px; padding:9px 16px; font-weight:600; font-size:13px;
+  display:inline-flex; align-items:center; gap:6px; justify-content:center;
+}
+.btn-primary{background:var(--amber); color:var(--petrol-900);}
+.btn-primary:hover{background:var(--amber-dark); color:#fff;}
+.btn-ghost{background:transparent; border:1px solid var(--line); color:var(--ink);}
+.btn-ghost:hover{border-color:var(--petrol-700);}
+.btn-dark{background:var(--petrol-900); color:#fff;}
+.btn-dark:hover{background:var(--petrol-800);}
+.btn:disabled{opacity:.5; cursor:not-allowed;}
+.btn-block{width:100%;}
+.lock-tag{position:absolute; top:14px; right:14px; font-size:16px;}
+
+.mode-select{display:flex; gap:10px; margin-top:10px;}
+.mode-opt{
+  flex:1; border:1px solid var(--line); border-radius:8px; padding:10px 12px; cursor:pointer;
+  background:var(--card);
+}
+.mode-opt.active{border-color:var(--amber); background:#FFF7EA;}
+.mode-opt .t{font-weight:600; font-size:13px;}
+.mode-opt .d{font-size:11.5px; color:var(--neutral); margin-top:2px;}
+
+/* ---------- SCREEN: GAME ---------- */
+.game-header{
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:10px;
+}
+.game-header .client-line{font-size:12.5px; color:var(--neutral);}
+.progress-track{display:flex; gap:5px;}
+.progress-dot{width:26px; height:5px; border-radius:3px; background:var(--line);}
+.progress-dot.done{background:var(--good);}
+.progress-dot.current{background:var(--amber);}
+
+.game-grid{display:grid; grid-template-columns:230px 1fr 240px; gap:14px; align-items:start;}
+@media (max-width:940px){.game-grid{grid-template-columns:1fr;}}
+
+/* store panel */
+.store-panel{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+.store-panel .store-header{
+  background:var(--petrol-900); color:#fff; padding:12px 14px; font-family:var(--font-display); font-size:13.5px; font-weight:600;
+}
+.store-shelf{padding:10px; display:flex; flex-direction:column; gap:6px;}
+.shelf-cat{font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--neutral); margin:6px 4px 0;}
+.shelf-item{
+  display:flex; align-items:center; gap:8px; padding:7px 8px; border-radius:7px; border:1px solid transparent;
+  font-size:12px; cursor:pointer;
+}
+.shelf-item:hover{background:var(--petrol-100); border-color:var(--line);}
+.shelf-item .ic{font-size:15px;}
+.catalog-detail{
+  border-top:1px solid var(--line); padding:12px 14px; font-size:12px; background:#FAFBFA;
+}
+.catalog-detail h4{font-size:13px; margin-bottom:4px;}
+.catalog-detail .price{font-family:var(--font-mono); color:var(--amber-dark); font-weight:600; margin:4px 0;}
+.catalog-detail ul{margin:6px 0 0; padding-left:16px;}
+.catalog-detail li{margin-bottom:3px;}
+
+/* conversation panel */
+.chat-panel{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); display:flex; flex-direction:column; min-height:520px;}
+.chat-client-bar{
+  display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid var(--line);
+}
+.avatar{
+  width:38px; height:38px; border-radius:50%; background:var(--petrol-700); color:#fff;
+  display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:600; font-size:14px;
+}
+.chat-client-bar .who .name{font-weight:600; font-size:14px;}
+.chat-client-bar .who .role{font-size:11.5px; color:var(--neutral);}
+.chat-thread{flex:1; padding:16px; display:flex; flex-direction:column; gap:12px; overflow-y:auto; max-height:430px;}
+.msg{max-width:80%; padding:10px 13px; border-radius:12px; font-size:13.5px; line-height:1.5;}
+.msg.client{background:var(--petrol-100); align-self:flex-start; border-bottom-left-radius:3px;}
+.msg.advisor{background:var(--amber); color:var(--petrol-900); align-self:flex-end; border-bottom-right-radius:3px;}
+.msg.system{
+  align-self:center; background:transparent; border:1px dashed var(--line); color:var(--neutral); font-size:11.5px;
+  max-width:92%; text-align:center;
+}
+.feedback-box{
+  margin:2px 0 4px; border-radius:9px; padding:10px 13px; font-size:12.5px; align-self:stretch;
+  border-left:4px solid var(--neutral); background:#FAFBFA;
+}
+.feedback-box.good{border-color:var(--good); background:var(--good-bg);}
+.feedback-box.mid{border-color:var(--amber); background:#FFF7EA;}
+.feedback-box.bad{border-color:var(--bad); background:var(--bad-bg);}
+.feedback-box .tag{font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; font-weight:600; margin-bottom:3px; display:block;}
+.chat-input-area{border-top:1px solid var(--line); padding:12px 14px;}
+.hints-row{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:9px;}
+.hint-chip{
+  border:1px solid var(--line); background:var(--paper); border-radius:16px; padding:6px 11px; font-size:11.5px;
+  color:#3C4643;
+}
+textarea#advisor-input{
+  width:100%; border:1px solid var(--line); border-radius:8px; padding:10px 12px; font-family:var(--font-body);
+  font-size:13.5px; resize:none; min-height:56px;
+}
+textarea#advisor-input:focus{outline:2px solid var(--amber); border-color:transparent;}
+.input-row-bottom{display:flex; align-items:center; justify-content:space-between; margin-top:8px;}
+.char-count{font-size:11px; color:var(--neutral);}
+
+/* gauges panel */
+.gauge-panel{background:var(--petrol-900); border-radius:var(--radius); padding:16px; color:#fff;}
+.gauge-panel h4{font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--petrol-100); margin-bottom:14px;}
+.gauge{margin-bottom:16px;}
+.gauge .glabel{display:flex; justify-content:space-between; font-size:11.5px; margin-bottom:5px;}
+.gauge .glabel .val{font-family:var(--font-mono); font-weight:600;}
+.gauge-track{position:relative; height:8px; border-radius:4px; background:rgba(255,255,255,0.12); overflow:hidden;}
+.gauge-track::before{
+  content:""; position:absolute; inset:0;
+  background-image:repeating-linear-gradient(90deg, rgba(255,255,255,0.18) 0 1px, transparent 1px 10%);
+}
+.gauge-fill{height:100%; border-radius:4px; transition:width .5s ease, background .5s ease;}
+.phase-tag{
+  margin-top:18px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.14);
+  font-size:11px; color:var(--petrol-100); text-transform:uppercase; letter-spacing:.06em;
+}
+.phase-tag .pv{font-family:var(--font-display); color:#fff; font-size:14px; text-transform:none; letter-spacing:0; margin-top:3px;}
+
+/* ---------- SCREEN: RESULTS ---------- */
+.results-wrap{max-width:760px; margin:0 auto;}
+.score-hero{
+  background:var(--petrol-900); color:#fff; border-radius:var(--radius); padding:30px; text-align:center; margin-bottom:20px;
+}
+.score-hero .label{font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--petrol-100);}
+.score-hero .big{font-family:var(--font-display); font-size:56px; font-weight:700; margin:6px 0;}
+.score-hero .big span{font-size:24px; color:var(--petrol-100); font-weight:500;}
+.perf-tag{
+  display:inline-block; margin-top:6px; padding:5px 14px; border-radius:20px; font-size:12px; font-weight:600;
+  font-family:var(--font-mono);
+}
+.cat-breakdown{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin-bottom:16px;}
+.cat-row{display:flex; align-items:center; gap:12px; margin-bottom:12px;}
+.cat-row:last-child{margin-bottom:0;}
+.cat-row .cname{width:190px; font-size:12.5px;}
+.cat-row .ctrack{flex:1; height:8px; border-radius:4px; background:var(--paper); overflow:hidden;}
+.cat-row .cfill{height:100%; background:var(--petrol-700); border-radius:4px;}
+.cat-row .cval{width:52px; text-align:right; font-family:var(--font-mono); font-size:12px; color:var(--neutral);}
+
+.feedback-cols{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px;}
+.fb-col{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px;}
+.fb-col h4{font-size:12.5px; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px;}
+.fb-col.strengths h4{color:var(--good);}
+.fb-col.opps h4{color:var(--amber-dark);}
+.fb-col ul{margin:0; padding-left:18px; font-size:13px;}
+.fb-col li{margin-bottom:6px;}
+.reco-box{background:#FFF7EA; border:1px solid #F0DCB2; border-radius:var(--radius); padding:16px 18px; margin-bottom:16px; font-size:13.5px;}
+.reco-box .tag{font-family:var(--font-mono); font-size:11px; text-transform:uppercase; color:var(--amber-dark); font-weight:600; display:block; margin-bottom:6px;}
+.rewards-row{display:flex; align-items:center; gap:14px; margin-bottom:20px; flex-wrap:wrap;}
+.reward-pill{background:var(--card); border:1px solid var(--line); border-radius:20px; padding:8px 14px; font-size:12.5px; display:flex; align-items:center; gap:7px;}
+.result-actions{display:flex; gap:10px;}
+
+@media (max-width:640px){
+  .dash-grid{grid-template-columns:repeat(2,1fr);}
+  .scenario-grid{grid-template-columns:1fr;}
+  .feedback-cols{grid-template-columns:1fr;}
+}
+
+/* ---------- SCREEN: REGISTRO ---------- */
+.register-wrap{max-width:520px; margin:40px auto 0;}
+.register-card{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  padding:32px 30px; box-shadow:0 10px 30px rgba(14,44,41,0.08);
+}
+.register-badge{
+  width:44px; height:44px; border-radius:10px;
+  background:linear-gradient(135deg, var(--amber), #F2B45C);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-display); font-weight:700; color:var(--petrol-900); font-size:18px;
+  margin-bottom:16px;
+}
+.register-card h1{font-size:22px; margin-bottom:8px;}
+.register-card .lead{color:var(--neutral); font-size:13.5px; margin-bottom:24px;}
+.field{margin-bottom:16px;}
+.field label{display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--ink);}
+.field input, .field select{
+  width:100%; border:1px solid var(--line); border-radius:8px; padding:10px 12px;
+  font-family:var(--font-body); font-size:13.5px; background:var(--paper);
+}
+.field input:focus, .field select:focus{outline:2px solid var(--amber); border-color:transparent; background:#fff;}
+.field .err{font-size:11.5px; color:var(--bad); margin-top:5px; min-height:14px;}
+.field.invalid input, .field.invalid select{border-color:var(--bad);}
+.register-footnote{font-size:11px; color:var(--neutral); margin-top:6px; line-height:1.5;}
+.field-row{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+@media (max-width:520px){.field-row{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">QC</div>
+      <div class="brand-text">
+        <div class="name">QuimiCasa</div>
+        <div class="sub">Plataforma de entrenamiento comercial</div>
+      </div>
+    </div>
+    <div class="player-chip">
+      <div class="stat"><span class="v" id="topbar-xp">0 XP</span><span class="k">Experiencia</span></div>
+      <div class="stat"><span class="v" id="topbar-avg">—</span><span class="k">Promedio</span></div>
+      <div class="level-badge" id="topbar-level">NIVEL 1</div>
+    </div>
+  </div>
+
+  <!-- ================= REGISTRO DEL PARTICIPANTE ================= -->
+  <div id="screen-register">
+    <div class="register-wrap">
+      <div class="register-card">
+        <div class="register-badge">QC</div>
+        <h1>Simulador de Atención y Venta</h1>
+        <p class="lead">Antes de comenzar, registra tus datos para iniciar la simulación.</p>
+
+        <form id="register-form" novalidate>
+          <div class="field" id="field-nombre">
+            <label for="reg-nombre">Nombre completo</label>
+            <input type="text" id="reg-nombre" autocomplete="name" placeholder="Ej. Laura Gómez">
+            <div class="err" id="err-nombre"></div>
+          </div>
+          <div class="field" id="field-correo">
+            <label for="reg-correo">Correo electrónico</label>
+            <input type="email" id="reg-correo" autocomplete="email" placeholder="nombre@empresa.com">
+            <div class="err" id="err-correo"></div>
+          </div>
+          <div class="field-row">
+            <div class="field" id="field-cargo">
+              <label for="reg-cargo">Cargo</label>
+              <input type="text" id="reg-cargo" placeholder="Ej. Asesor comercial">
+              <div class="err" id="err-cargo"></div>
+            </div>
+            <div class="field" id="field-area">
+              <label for="reg-area">Área</label>
+              <input type="text" id="reg-area" placeholder="Ej. Ventas">
+              <div class="err" id="err-area"></div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" id="btn-register" style="padding:12px 16px; font-size:13.5px;" disabled>COMENZAR SIMULACIÓN</button>
+          <div class="register-footnote">Tus datos se usan únicamente para esta sesión de entrenamiento y no se comparten con servicios externos.</div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= HOME / DASHBOARD ================= -->
+  <div id="screen-home" class="hidden">
+    <div class="hero">
+      <div class="hero-eyebrow">Simulador · Asesor comercial</div>
+      <h1>Atiende clientes reales, sin riesgo real.</h1>
+      <p>Entra al punto de venta de QuimiCasa, atiende clientes simulados con necesidades, dudas y objeciones distintas, y recibe una evaluación de tus competencias comerciales al estilo de un entrenamiento profesional.</p>
+    </div>
+
+    <div class="section-title"><h2>Tu desempeño</h2><span class="hint">Se actualiza después de cada misión</span></div>
+    <div class="dash-grid">
+      <div class="dash-card"><div class="k">Nivel del asesor</div><div class="v" id="dash-level">1</div></div>
+      <div class="dash-card"><div class="k">Misiones completadas</div><div class="v" id="dash-completed">0</div></div>
+      <div class="dash-card"><div class="k">Mejor puntuación</div><div class="v" id="dash-best">—</div></div>
+      <div class="dash-card"><div class="k">Competencia más fuerte</div><div class="v small" id="dash-strong">—</div></div>
+    </div>
+    <div class="dash-grid" style="margin-top:12px;">
+      <div class="dash-card"><div class="k">Promedio general</div><div class="v" id="dash-avg">—</div></div>
+      <div class="dash-card"><div class="k">Tasa de cierre estimada</div><div class="v" id="dash-close">—</div></div>
+      <div class="dash-card"><div class="k">Competencia a reforzar</div><div class="v small" id="dash-weak">—</div></div>
+      <div class="dash-card"><div class="k">Medallas obtenidas</div><div class="v" id="dash-badges">0</div></div>
+    </div>
+
+    <div class="section-title"><h2>Modo de juego</h2><span class="hint">Elige antes de comenzar una misión</span></div>
+    <div class="mode-select">
+      <div class="mode-opt active" data-mode="entrenamiento" onclick="setMode('entrenamiento')">
+        <div class="t">🎓 Entrenamiento</div>
+        <div class="d">Con preguntas sugeridas, ficha de producto visible y consejos.</div>
+      </div>
+      <div class="mode-opt" data-mode="desafio" onclick="setMode('desafio')">
+        <div class="t">🔥 Desafío</div>
+        <div class="d">Sin ayudas. Resuelve la atención con tu propio criterio.</div>
+      </div>
+    </div>
+
+    <div class="section-title"><h2>Escenarios disponibles</h2><span class="hint">Desbloquea el siguiente superando 60/100</span></div>
+    <div class="scenario-grid" id="scenario-grid"></div>
+  </div>
+
+  <!-- ================= GAME SCREEN ================= -->
+  <div id="screen-game" class="hidden">
+    <div class="game-header">
+      <div>
+        <h2 id="game-scenario-title">—</h2>
+        <div class="client-line" id="game-scenario-sub">—</div>
+      </div>
+      <div class="progress-track" id="progress-track"></div>
+    </div>
+
+    <div class="game-grid">
+      <!-- STORE / CATALOG -->
+      <div class="store-panel">
+        <div class="store-header">🏪 QuimiCasa — Estantería</div>
+        <div class="store-shelf" id="store-shelf"></div>
+        <div class="catalog-detail" id="catalog-detail">
+          <p style="color:var(--neutral);">Toca un producto para ver su ficha técnica.</p>
+        </div>
+      </div>
+
+      <!-- CHAT -->
+      <div class="chat-panel">
+        <div class="chat-client-bar">
+          <div class="avatar" id="client-avatar">?</div>
+          <div class="who">
+            <div class="name" id="client-name">Cliente</div>
+            <div class="role" id="client-role">—</div>
+          </div>
+        </div>
+        <div class="chat-thread" id="chat-thread"></div>
+        <div class="chat-input-area">
+          <div class="hints-row" id="hints-row"></div>
+          <textarea id="advisor-input" placeholder="Escribe tu respuesta como asesor comercial…" maxlength="400"></textarea>
+          <div class="input-row-bottom">
+            <span class="char-count"><span id="char-count">0</span>/400</span>
+            <button class="btn btn-primary" id="btn-send">Responder al cliente →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- GAUGES -->
+      <div class="gauge-panel">
+        <h4>Panel de instrumentación</h4>
+        <div class="gauge">
+          <div class="glabel"><span>Confianza</span><span class="val mono" id="g-confianza-val">50</span></div>
+          <div class="gauge-track"><div class="gauge-fill" id="g-confianza" style="width:50%; background:var(--amber);"></div></div>
+        </div>
+        <div class="gauge">
+          <div class="glabel"><span>Satisfacción</span><span class="val mono" id="g-satisfaccion-val">50</span></div>
+          <div class="gauge-track"><div class="gauge-fill" id="g-satisfaccion" style="width:50%; background:var(--amber);"></div></div>
+        </div>
+        <div class="gauge">
+          <div class="glabel"><span>Claridad de necesidad</span><span class="val mono" id="g-claridad-val">15</span></div>
+          <div class="gauge-track"><div class="gauge-fill" id="g-claridad" style="width:15%; background:var(--amber);"></div></div>
+        </div>
+        <div class="gauge">
+          <div class="glabel"><span>Probabilidad de compra</span><span class="val mono" id="g-probabilidad-val">30</span></div>
+          <div class="gauge-track"><div class="gauge-fill" id="g-probabilidad" style="width:30%; background:var(--amber);"></div></div>
+        </div>
+        <div class="phase-tag">Fase actual<div class="pv" id="phase-label">Ingreso del cliente</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= RESULTS SCREEN ================= -->
+  <div id="screen-results" class="hidden">
+    <div class="results-wrap">
+      <div class="score-hero">
+        <div class="label">Resultado de la misión</div>
+        <h3 id="res-participant" style="color:#fff; font-size:15px; margin-top:4px;">—</h3>
+        <div class="big"><span id="res-score">0</span><span>/100</span></div>
+        <div class="perf-tag" id="res-tag">—</div>
+      </div>
+
+      <div class="cat-breakdown" id="cat-breakdown">
+        <h4 style="font-size:13px; margin-bottom:14px;">Desglose por competencia</h4>
+        <div id="cat-rows"></div>
+      </div>
+
+      <div class="feedback-cols">
+        <div class="fb-col strengths"><h4>✓ Fortalezas</h4><ul id="res-strengths"></ul></div>
+        <div class="fb-col opps"><h4>△ Oportunidades</h4><ul id="res-opps"></ul></div>
+      </div>
+
+      <div class="reco-box">
+        <span class="tag">Recomendación</span>
+        <span id="res-reco">—</span>
+      </div>
+
+      <div class="rewards-row" id="res-rewards"></div>
+
+      <p id="res-closing" style="font-size:12.5px; color:var(--good); font-weight:600; margin-bottom:14px;">✓ Simulación completada correctamente.</p>
+
+      <div class="result-actions">
+        <button class="btn btn-ghost" onclick="goHome()">← Volver al panel</button>
+        <button class="btn btn-dark" id="btn-retry">Reintentar escenario</button>
+        <button class="btn btn-primary" id="btn-next">Siguiente escenario →</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* =========================================================================
+   DATA — CATÁLOGO DE PRODUCTOS (ficticio, comercial, seguro)
+========================================================================= */
+const PRODUCTS = [
+  {id:"brillamax", name:"BrillaMax Detergente Multiusos 1L", cat:"Limpieza del hogar", icon:"🧴", price:"$18.900",
+    features:["Fórmula concentrada", "Rinde hasta 40 lavados", "Aroma cítrico"],
+    benefits:"Alto rendimiento: cunde más que un detergente tradicional, por lo que resulta más económico por uso.",
+    use:"Pisos, superficies duras y limpieza general del hogar.", complement:"Guantes ProTouch"},
+  {id:"desinfectall", name:"DesinfectAll Spray 500ml", cat:"Limpieza del hogar", icon:"🧪", price:"$22.500",
+    features:["Elimina 99.9% de gérmenes comunes", "Acción rápida", "No requiere enjuague en superficies lisas"],
+    benefits:"Higiene inmediata para zonas de alto contacto, ideal para rutinas diarias.",
+    use:"Cocinas, baños y superficies de uso frecuente.", complement:"Paños MicroFibra"},
+  {id:"pisoshine", name:"PisoShine Cera Líquida 1L", cat:"Limpieza del hogar", icon:"✨", price:"$16.700",
+    features:["Brillo de larga duración", "Capa antideslizante", "Apto para cerámica y madera sellada"],
+    benefits:"Protege la superficie además de darle un acabado más cuidado.",
+    use:"Pisos de cerámica, porcelanato y madera sellada.", complement:"Trapeador Industrial"},
+  {id:"aromafresh", name:"AromaFresh Ambientador 300ml", cat:"Limpieza del hogar", icon:"🌸", price:"$9.900",
+    features:["Fragancia de larga duración", "Varios aromas disponibles"],
+    benefits:"Complementa la limpieza dejando el ambiente agradable por más tiempo.",
+    use:"Interiores en general.", complement:"DesinfectAll Spray"},
+  {id:"banopuro", name:"BañoPuro Limpiador Sanitario 750ml", cat:"Limpieza del hogar", icon:"🚿", price:"$14.300",
+    features:["Remueve sarro y manchas", "Fórmula de limpieza profunda"],
+    benefits:"Resultados visibles desde la primera aplicación en superficies de baño.",
+    use:"Sanitarios, duchas y áreas húmedas.", complement:"Guantes ProTouch"},
+  {id:"agrofert", name:"AgroFert NPK Fertilizante 5kg", cat:"Agricultura", icon:"🌱", price:"$65.000",
+    features:["Fórmula balanceada N-P-K", "Absorción gradual"],
+    benefits:"Mejora el rendimiento del cultivo con una nutrición equilibrada.",
+    use:"Cultivos de ciclo corto y huertas.", complement:"BioProtec Fungicida"},
+  {id:"bioprotec", name:"BioProtec Fungicida Preventivo 1L", cat:"Agricultura", icon:"🛡️", price:"$48.500",
+    features:["Acción preventiva", "Aplicación foliar"],
+    benefits:"Reduce el riesgo de enfermedades fúngicas antes de que aparezcan.",
+    use:"Prevención en cultivos y plantas ornamentales.", complement:"AgroFert NPK"},
+  {id:"hidroplant", name:"HidroPlant Suplemento Foliar 500ml", cat:"Agricultura", icon:"💧", price:"$32.000",
+    features:["Micronutrientes esenciales", "Fácil aplicación foliar"],
+    benefits:"Fortalece el follaje y ayuda a la recuperación de plantas debilitadas.",
+    use:"Cultivos ornamentales y hortalizas.", complement:"AgroFert NPK"},
+  {id:"industriclean", name:"IndustriClean Desengrasante 5L", cat:"Institucional", icon:"🏭", price:"$89.000",
+    features:["Alto poder desengrasante", "Presentación institucional"],
+    benefits:"Pensado para volúmenes de limpieza más exigentes en cocinas y talleres.",
+    use:"Cocinas industriales, talleres y áreas comerciales.", complement:"Guantes ProTouch Industrial"},
+  {id:"ecobolsa", name:"EcoBolsa Residuos Industriales x50", cat:"Institucional", icon:"🗑️", price:"$27.400",
+    features:["Calibre reforzado", "Resistencia a roturas"],
+    benefits:"Evita derrames y roturas en el manejo diario de residuos comerciales.",
+    use:"Manejo de residuos en comercios e instituciones.", complement:"IndustriClean Desengrasante"}
+];
+
+/* =========================================================================
+   MOTOR DE ANÁLISIS DE RESPUESTAS (heurístico, en español)
+========================================================================= */
+const TONE_POSITIVE = ["con gusto","claro que","entiendo","comprendo","por supuesto","cuénteme","perfecto","gracias por","permítame","le ayudo","no se preocupe","tranquilo","con mucho gusto"];
+const TONE_NEGATIVE = ["no tengo tiempo","no es mi problema","eso no se puede","apúrese","ya le dije","no puedo hacer nada","no sé","arrégleselas","no me diga eso","es lo que hay"];
+
+function toneScore(text){
+  const t = text.toLowerCase();
+  let pos = TONE_POSITIVE.filter(k=>t.includes(k)).length;
+  let neg = TONE_NEGATIVE.filter(k=>t.includes(k)).length;
+  const shouty = (text.match(/[A-ZÁÉÍÓÚÑ]{5,}/g)||[]).length;
+  neg += shouty;
+  if(neg>0) return 0;
+  if(pos>0) return 2;
+  return 1; // neutral, sin marcadores claros
+}
+
+function keywordTier(text, positives, negatives){
+  const t = text.toLowerCase();
+  if(t.trim().split(/\s+/).length < 3) return 0; // respuesta demasiado corta
+  let score = positives.filter(k=>t.includes(k)).length;
+  score -= negatives.filter(k=>t.includes(k)).length * 1.5;
+  if(score<=0) return 0;
+  if(score<2) return 1;
+  return 2;
+}
+
+const TIER_LABEL = {0:"Débil",1:"Aceptable",2:"Sólida"};
+const TIER_CLASS = {0:"bad",1:"mid",2:"good"};
+
+/* =========================================================================
+   ESCENARIOS
+   Cada paso: categoría, puntos de esa categoría asignados a este paso,
+   keywords positivas/negativas, línea del cliente, pistas, y reacciones
+   por nivel (0=débil,1=aceptable,2=sólida).
+========================================================================= */
+function buildScenario(cfg){ return cfg; }
+
+const SCENARIOS = [
+  buildScenario({
+    id:"perfecto",
+    title:"Cliente Perfecto",
+    icon:"🟢",
+    stars:"★☆☆☆☆",
+    difficultyLabel:"Introductorio",
+    clientName:"Marta Londoño",
+    clientRole:"Ama de casa · primera visita",
+    description:"Un cliente claro, amable y con disposición a comprar. Ideal para aprender el flujo básico de atención.",
+    unlockedByDefault:true,
+    focusProducts:["brillamax","pisoshine"],
+    steps:[
+      {
+        category:"diagnostico", points:10,
+        clientLine:"Buenos días. Estoy buscando algo para limpiar mi casa, algo que rinda bien.",
+        positives:["qué tipo","para qué","superficie","frecuencia","prefiere","presupuesto","marca","cuánto","dónde","qué necesita","cómo es"],
+        negatives:["le recomiendo","lleve este","le muestro este producto"],
+        hints:["¿Qué superficies necesita limpiar principalmente?","¿Con qué frecuencia hace este tipo de limpieza?"],
+        reactions:{
+          0:"Ehh... no sé, algo que limpie bien nada más.",
+          1:"Bueno, principalmente los pisos de la sala y la cocina.",
+          2:"¡Claro! Principalmente pisos de cerámica y un poco el baño. Uso algo casi a diario."
+        }
+      },
+      {
+        category:"diagnostico", points:10,
+        clientLine:"Uso algo casi a diario, sobre todo en la cocina.",
+        positives:["olor","aroma","ha usado","qué marca","le ha funcionado","cuánto gasta","cantidad","cuánto compra","alguna preferencia"],
+        negatives:["le recomiendo","lleve este"],
+        hints:["¿Ha usado alguna marca antes que le haya funcionado bien?","¿Prefiere algún aroma en particular?"],
+        reactions:{
+          0:"No sé, cualquiera está bien creo.",
+          1:"He usado un par de marcas, nada especial.",
+          2:"Me gustan los aromas cítricos, y prefiero algo que no deje residuo pegajoso."
+        }
+      },
+      {
+        category:"conocimiento_argumentacion", points:15, points2:15,
+        clientLine:"¿Y cuál me recomienda entonces?",
+        positives:["concentrado","rinde","aroma cítrico","brillamax","beneficio","cunde","económico por uso","superficie","garantía","calidad"],
+        negatives:[],
+        hints:["Le recomiendo BrillaMax: es concentrado y rinde hasta 40 lavados.","Explique el beneficio, no solo el nombre del producto."],
+        reactions:{
+          0:"Ah, bueno... no entendí muy bien por qué ese.",
+          1:"Ok, suena bien. ¿Y qué tan bueno es comparado con otros?",
+          2:"¡Me convence! Se nota que rinde y huele bien. Me interesa."
+        }
+      },
+      {
+        category:"objeciones", points:15,
+        clientLine:"¿No es un poco caro comparado con otras marcas más económicas?",
+        positives:["rinde","dura más","por uso","calidad","le explico","comparado","a largo plazo","concentrado","garantía","vale la pena"],
+        negatives:["le bajo el precio","le regalo","no es caro","obviamente no"],
+        hints:["Explique el valor: rinde más, así que el costo por uso es menor.","No compita solo por precio, compare el rendimiento."],
+        reactions:{
+          0:"Mmm, no sé, creo que mejor busco algo más barato.",
+          1:"Ah bueno, tiene sentido. Lo voy a pensar.",
+          2:"Tiene razón, si rinde tanto sí vale la pena. Me lo llevo."
+        }
+      },
+      {
+        category:"cierre", points:10,
+        clientLine:"Listo, ¿algo más que me recomiende llevar?",
+        positives:["también le sirve","complementa","le puede interesar","le gustaría llevar","algo más","le facilita","junto con"],
+        negatives:["no","nada más","ya"],
+        hints:["Ofrezca un producto complementario relacionado.","Cierre con una invitación cordial a regresar."],
+        reactions:{
+          0:"Ah, bueno, entonces solo esto.",
+          1:"Ah, listo, me lo llevo también.",
+          2:"¡Perfecto! Me lleva la pareja completa, muchas gracias por la atención."
+        }
+      }
+    ]
+  }),
+  buildScenario({
+    id:"pregunton",
+    title:"Cliente Preguntón",
+    icon:"🟡",
+    stars:"★★★☆☆",
+    difficultyLabel:"Intermedio",
+    clientName:"Andrés Ríos",
+    clientRole:"Tiene una huerta pequeña",
+    description:"Hace muchas preguntas técnicas. Evalúa tu conocimiento de producto y tu capacidad de explicar con claridad.",
+    unlockedByDefault:false,
+    focusProducts:["agrofert","bioprotec","hidroplant"],
+    steps:[
+      {
+        category:"diagnostico", points:10,
+        clientLine:"Buenas, tengo una huerta pequeña y quiero mejorar la producción, pero no sé qué producto usar.",
+        positives:["qué cultiva","qué tipo de suelo","hace cuánto","qué ha usado","tamaño","qué planta","problema","cuál es el problema"],
+        negatives:["le recomiendo","lleve este"],
+        hints:["¿Qué está cultivando exactamente?","¿Ha notado algún problema puntual (hojas amarillas, poco crecimiento)?"],
+        reactions:{
+          0:"Pues no sé, plantas variadas.",
+          1:"Tengo tomates y algo de lechuga.",
+          2:"Tengo tomates y lechuga, y últimamente las hojas se ven un poco pálidas."
+        }
+      },
+      {
+        category:"diagnostico", points:10,
+        clientLine:"¿Eso qué significa, que les falta algo?",
+        positives:["nutriente","podría ser","le explico","suele pasar cuando","depende","cuánto riega","tipo de tierra","cuánto sol"],
+        negatives:[],
+        hints:["Explique brevemente que puede indicar falta de nutrientes, sin sonar alarmista.","Pregunte por riego y exposición al sol."],
+        reactions:{
+          0:"No entendí bien, ¿pero eso es grave?",
+          1:"Ah ok, ¿y qué le pongo entonces?",
+          2:"Tiene sentido, riego cada dos días y les da bastante sol. ¿Qué me recomienda?"
+        }
+      },
+      {
+        category:"conocimiento_argumentacion", points:15, points2:15,
+        clientLine:"¿Cuál es la diferencia entre este fertilizante y uno orgánico?",
+        positives:["npk","balanceada","absorción","nutrición","comparado con","diferencia es","beneficio","gradual","fortalece"],
+        negatives:[],
+        hints:["AgroFert tiene una fórmula NPK balanceada de absorción gradual.","Explique la diferencia sin inventar datos técnicos, con honestidad."],
+        reactions:{
+          0:"No me quedó muy claro la diferencia, la verdad.",
+          1:"Ah, ok, entiendo un poco mejor.",
+          2:"¡Ahora sí entendí! Eso me sirve para decidir mejor."
+        }
+      },
+      {
+        category:"objeciones", points:15,
+        clientLine:"¿Y si no funciona en mi tipo de suelo? La vez pasada algo no me funcionó.",
+        positives:["entiendo su preocupación","depende del suelo","le recomiendo probar","podemos empezar con poco","garantía","le explico cómo aplicar"],
+        negatives:["le aseguro que sí funciona","obvio que funciona"],
+        hints:["Valide su preocupación antes de responder.","Sea honesto: no prometa resultados que no puede garantizar."],
+        reactions:{
+          0:"Mmm, entonces mejor no arriesgo.",
+          1:"Bueno, puede ser, lo voy a intentar.",
+          2:"Me parece razonable empezar con poco y ver cómo responde. Vamos con eso."
+        }
+      },
+      {
+        category:"cierre", points:10,
+        clientLine:"Listo, ¿necesito algo más junto con esto?",
+        positives:["le puede servir también","complementa","junto con","le ayuda a prevenir","le gustaría llevar"],
+        negatives:["no","nada"],
+        hints:["Mencione BioProtec como prevención complementaria.","Cierre invitándolo a contarle cómo le fue."],
+        reactions:{
+          0:"Ah bueno, entonces solo esto por ahora.",
+          1:"Listo, me lo llevo también.",
+          2:"Perfecto, me lleva los dos. Muchas gracias por explicarme tan bien."
+        }
+      }
+    ]
+  }),
+  buildScenario({
+    id:"grosero",
+    title:"Cliente Grosero",
+    icon:"🔴",
+    stars:"★★★★☆",
+    difficultyLabel:"Avanzado",
+    clientName:"Patricia Vélez",
+    clientRole:"Dueña de un restaurante · con afán",
+    description:"Impaciente y cortante. Evalúa tu autocontrol y tu manejo de comunicación bajo presión.",
+    unlockedByDefault:false,
+    focusProducts:["industriclean","ecobolsa"],
+    steps:[
+      {
+        category:"diagnostico", points:10,
+        clientLine:"Necesito algo para la grasa de mi cocina, rápido, no tengo todo el día.",
+        positives:["con gusto","claro","enseguida","para qué área","cuánta grasa","qué tipo de cocina","cantidad","le ayudo rápido"],
+        negatives:["tranquilícese","cálmese","espere"],
+        hints:["Responda con calma y agilidad, sin ponerse a la defensiva.","Pregunte lo esencial en una sola frase."],
+        reactions:{
+          0:"¿Ve? Por eso no me gusta venir aquí, nadie entiende rápido.",
+          1:"Bueno, es para la cocina del restaurante, hay bastante grasa acumulada.",
+          2:"Es para la cocina de mi restaurante, hay grasa acumulada en las parrillas y el piso."
+        }
+      },
+      {
+        category:"objeciones", points:7,
+        clientLine:"¿Y esto realmente funciona? La última vez me dieron algo que no sirvió para nada.",
+        positives:["entiendo su molestia","lamento eso","le explico por qué","este es diferente porque","le garantizo la ficha","fue diseñado para"],
+        negatives:["eso no es mi problema","no sé qué le vendieron","obvio que funciona"],
+        hints:["Reconozca su frustración antes de explicar el producto.","No se ponga a la defensiva ni prometa de más."],
+        reactions:{
+          0:"Ay, no sé, esto suena igual a lo de la otra vez.",
+          1:"Bueno, espero que esta vez sí sirva.",
+          2:"Está bien, si me explica bien por qué es diferente, le creo."
+        }
+      },
+      {
+        category:"conocimiento_argumentacion", points:15, points2:15,
+        clientLine:"Explíqueme rápido por qué este sí serviría.",
+        positives:["alto poder desengrasante","industrial","para volúmenes","cocina industrial","concentrado","talleres","rápida acción"],
+        negatives:[],
+        hints:["IndustriClean está formulado para volúmenes industriales, no doméstico.","Sea directo y concreto, sin rodeos."],
+        reactions:{
+          0:"No me quedó claro, y no tengo tiempo para adivinar.",
+          1:"Ok, entiendo, suena más fuerte que lo anterior.",
+          2:"Ahora sí, eso suena a lo que necesito para mi cocina."
+        }
+      },
+      {
+        category:"objeciones", points:8,
+        clientLine:"Está carísimo, en la otra tienda lo consigo más barato.",
+        positives:["entiendo","por el volumen","rinde más","calidad industrial","le explico el valor","comparado con","a largo plazo le sale mejor"],
+        negatives:["le bajo el precio","se lo dejo más barato","no es caro"],
+        hints:["Explique valor por volumen y rendimiento, no baje el precio de inmediato.","Reconozca su punto sin ceder solo por presión."],
+        reactions:{
+          0:"Entonces mejor voy a mirar en la otra tienda.",
+          1:"Bueno, tiene su punto. Déjeme pensarlo.",
+          2:"Está bien, si rinde tanto como dice, prefiero llevarlo de una vez."
+        }
+      },
+      {
+        category:"cierre", points:10,
+        clientLine:"Bueno, ¿me lo empaca? Y dígame si necesito algo más para el resto de la cocina.",
+        positives:["con gusto","le recomiendo también","le sirve para","le empaco","algo más","le ayuda con"],
+        negatives:["apúrese usted también","ya casi"],
+        hints:["Empaque con agilidad y sugiera EcoBolsa para el manejo de residuos.","Cierre de forma breve, respetando su afán."],
+        reactions:{
+          0:"Bueno, ya me tengo que ir, gracias.",
+          1:"Listo, gracias por la atención.",
+          2:"Perfecto, me lleva los dos entonces. Gracias, ahora sí me atendieron bien."
+        }
+      }
+    ]
+  })
+];
+
+/* =========================================================================
+   MEDALLAS
+========================================================================= */
+const BADGES = [
+  {id:"diagnostico_perfecto", icon:"🎯", name:"Diagnóstico perfecto", check:c=>c.diagnostico>=18},
+  {id:"experto_producto", icon:"🧠", name:"Experto en producto", check:c=>c.conocimiento>=13},
+  {id:"constructor_confianza", icon:"🤝", name:"Constructor de confianza", check:(c,m)=>m.confianza>=80},
+  {id:"maestro_objeciones", icon:"🛡️", name:"Maestro de objeciones", check:c=>c.objeciones>=13},
+  {id:"comunicacion_impecable", icon:"💬", name:"Comunicación impecable", check:c=>c.escucha>=13},
+  {id:"cierre_efectivo", icon:"💰", name:"Cierre efectivo", check:c=>c.cierre>=9}
+];
+
+/* =========================================================================
+   REGISTRO DEL PARTICIPANTE
+   Datos capturados antes de iniciar la simulación. Se conservan en memoria
+   durante toda la sesión y alimentan el objeto participantData al finalizar
+   (preparado para una futura integración externa, sin conexión aún).
+========================================================================= */
+let participant = null;      // {participantId, nombre, correo, cargo, area, fechaInicio}
+let participantData = null;  // objeto final para integración futura
+
+function pad2(n){ return String(n).padStart(2,"0"); }
+function generateParticipantId(d){
+  return `SIM-${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}-${pad2(d.getHours())}${pad2(d.getMinutes())}${pad2(d.getSeconds())}`;
+}
+function formatDuration(ms){
+  const totalSec = Math.max(0, Math.round(ms/1000));
+  const mins = Math.floor(totalSec/60);
+  const secs = totalSec%60;
+  return `${mins}m ${secs}s`;
+}
+
+function setFieldError(key, msg){
+  document.getElementById("err-"+key).textContent = msg;
+  document.getElementById("field-"+key).classList.toggle("invalid", !!msg);
+}
+
+function validateRegisterForm(){
+  const nombre = document.getElementById("reg-nombre").value.trim();
+  const correo = document.getElementById("reg-correo").value.trim();
+  const cargo = document.getElementById("reg-cargo").value.trim();
+  const area = document.getElementById("reg-area").value.trim();
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  setFieldError("nombre", nombre.length>=3 ? "" : "Ingresa tu nombre completo (mínimo 3 caracteres).");
+  setFieldError("correo", emailRe.test(correo) ? "" : "Ingresa un correo electrónico válido.");
+  setFieldError("cargo", cargo.length>0 ? "" : "Este campo es obligatorio.");
+  setFieldError("area", area.length>0 ? "" : "Este campo es obligatorio.");
+
+  const valid = nombre.length>=3 && emailRe.test(correo) && cargo.length>0 && area.length>0;
+  document.getElementById("btn-register").disabled = !valid;
+  return valid;
+}
+
+function initRegisterForm(){
+  ["reg-nombre","reg-correo","reg-cargo","reg-area"].forEach(id=>{
+    document.getElementById(id).addEventListener("input", validateRegisterForm);
+  });
+
+  document.getElementById("register-form").addEventListener("submit", function(e){
+    e.preventDefault();
+    if(!validateRegisterForm()) return;
+
+    const now = new Date();
+    participant = {
+      participantId: generateParticipantId(now),
+      nombre: document.getElementById("reg-nombre").value.trim(),
+      correo: document.getElementById("reg-correo").value.trim(),
+      cargo: document.getElementById("reg-cargo").value.trim(),
+      area: document.getElementById("reg-area").value.trim(),
+      fechaInicio: now
+    };
+    // estado inicial preparado para integración futura, antes de completar escenarios
+    participantData = {
+      participantId: participant.participantId,
+      nombre: participant.nombre,
+      correo: participant.correo,
+      cargo: participant.cargo,
+      area: participant.area,
+      fechaInicio: participant.fechaInicio.toISOString(),
+      fechaFinalizacion: null,
+      tiempoTotal: null,
+      escenariosCompletados: 0,
+      puntuacionFinal: null,
+      nivel: null,
+      estado: "Incompleto",
+      competencias: null
+    };
+
+    document.getElementById("screen-register").classList.add("hidden");
+    document.getElementById("screen-home").classList.remove("hidden");
+    renderHome();
+  });
+}
+
+/* =========================================================================
+   ESTADO DEL JUGADOR (persistente durante la sesión)
+========================================================================= */
+let player = {
+  xp:0, level:1, completed:0,
+  bestScore:null, scoreHistory:[],
+  unlocked:{perfecto:true, pregunton:false, grosero:false},
+  badges:new Set(),
+  catTotals:{diagnostico:[], escucha:[], conocimiento:[], argumentacion:[], objeciones:[], experiencia:[], cierre:[]}
+};
+let mode = "entrenamiento";
+
+/* estado de partida en curso */
+let game = null;
+
+function setMode(m){
+  mode = m;
+  document.querySelectorAll(".mode-opt").forEach(el=>el.classList.toggle("active", el.dataset.mode===m));
+}
+
+/* =========================================================================
+   RENDER: HOME
+========================================================================= */
+function renderHome(){
+  document.getElementById("dash-level").textContent = player.level;
+  document.getElementById("dash-completed").textContent = player.completed;
+  document.getElementById("dash-best").textContent = player.bestScore!==null ? player.bestScore+"/100" : "—";
+  document.getElementById("dash-badges").textContent = player.badges.size;
+
+  const avg = player.scoreHistory.length ? Math.round(player.scoreHistory.reduce((a,b)=>a+b,0)/player.scoreHistory.length) : null;
+  document.getElementById("dash-avg").textContent = avg!==null ? avg+"/100" : "—";
+  document.getElementById("dash-close").textContent = avg!==null ? Math.min(95, Math.round(avg*0.9))+"%" : "—";
+
+  const {strong, weak} = getCompetencyExtremes();
+  document.getElementById("dash-strong").textContent = strong || "—";
+  document.getElementById("dash-weak").textContent = weak || "—";
+
+  document.getElementById("topbar-xp").textContent = player.xp+" XP";
+  document.getElementById("topbar-avg").textContent = avg!==null ? avg+"/100" : "—";
+  document.getElementById("topbar-level").textContent = "NIVEL "+player.level;
+
+  const grid = document.getElementById("scenario-grid");
+  grid.innerHTML = "";
+  SCENARIOS.forEach((sc, idx)=>{
+    const unlocked = player.unlocked[sc.id];
+    const best = player.bestByScenario && player.bestByScenario[sc.id];
+    const card = document.createElement("div");
+    card.className = "scenario-card " + (unlocked ? "unlocked" : "locked");
+    card.innerHTML = `
+      ${!unlocked ? '<div class="lock-tag">🔒</div>' : ''}
+      <div class="scenario-top">
+        <div class="scenario-icon">${sc.icon}</div>
+        <div class="stars">${sc.stars}</div>
+      </div>
+      <h3>${sc.title}</h3>
+      <div class="desc">${sc.description}</div>
+      <div class="scenario-meta"><span>${sc.difficultyLabel}</span><span>${sc.clientName}</span></div>
+      ${best ? `<div class="best-score">Mejor puntuación: ${best}/100</div>` : ''}
+      <button class="btn ${unlocked?'btn-primary':'btn-ghost'} btn-block" ${unlocked?'':'disabled'} onclick="startScenario('${sc.id}')">
+        ${unlocked ? (best? 'Jugar de nuevo' : 'Comenzar misión') : 'Bloqueado'}
+      </button>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function getCompetencyExtremes(){
+  const names = {diagnostico:"Diagnóstico de necesidad", escucha:"Escucha y comunicación", conocimiento:"Conocimiento de producto",
+    argumentacion:"Argumentación de valor", objeciones:"Manejo de objeciones", experiencia:"Experiencia del cliente", cierre:"Cierre comercial"};
+  const maxes = {diagnostico:20, escucha:15, conocimiento:15, argumentacion:15, objeciones:15, experiencia:10, cierre:10};
+  let best=null, worst=null, bestPct=-1, worstPct=2;
+  Object.keys(player.catTotals).forEach(k=>{
+    const arr = player.catTotals[k];
+    if(!arr.length) return;
+    const avg = arr.reduce((a,b)=>a+b,0)/arr.length;
+    const pct = avg/maxes[k];
+    if(pct>bestPct){bestPct=pct; best=names[k];}
+    if(pct<worstPct){worstPct=pct; worst=names[k];}
+  });
+  return {strong:best, weak:worst};
+}
+
+function goHome(){
+  document.getElementById("screen-game").classList.add("hidden");
+  document.getElementById("screen-results").classList.add("hidden");
+  document.getElementById("screen-home").classList.remove("hidden");
+  renderHome();
+}
+
+/* =========================================================================
+   INICIO DE PARTIDA
+========================================================================= */
+function startScenario(id){
+  const sc = SCENARIOS.find(s=>s.id===id);
+  if(!player.unlocked[id]) return;
+
+  game = {
+    scenario:sc,
+    stepIndex:0,
+    metrics:{confianza:50, satisfaccion:50, claridad:15, probabilidad:30},
+    categoryScores:{diagnostico:0, escucha:0, conocimiento:0, argumentacion:0, objeciones:0, cierre:0},
+    escuchaSteps:0,
+    log:[]
+  };
+
+  document.getElementById("screen-home").classList.add("hidden");
+  document.getElementById("screen-results").classList.add("hidden");
+  document.getElementById("screen-game").classList.remove("hidden");
+
+  document.getElementById("game-scenario-title").textContent = sc.icon+" "+sc.title;
+  document.getElementById("game-scenario-sub").textContent = sc.description;
+  document.getElementById("client-name").textContent = sc.clientName;
+  document.getElementById("client-role").textContent = sc.clientRole;
+  document.getElementById("client-avatar").textContent = sc.clientName.split(" ").map(w=>w[0]).join("").slice(0,2);
+
+  renderProgress();
+  renderStoreShelf();
+  renderGauges();
+
+  const thread = document.getElementById("chat-thread");
+  thread.innerHTML = "";
+  addSystemMsg(`${sc.clientName} entra a la tienda.`);
+  askCurrentStep();
+}
+
+function renderProgress(){
+  const track = document.getElementById("progress-track");
+  track.innerHTML = "";
+  game.scenario.steps.forEach((_, i)=>{
+    const d = document.createElement("div");
+    d.className = "progress-dot " + (i<game.stepIndex ? "done" : (i===game.stepIndex ? "current":""));
+    track.appendChild(d);
+  });
+}
+
+const PHASE_LABELS = ["Diagnóstico inicial","Diagnóstico profundo","Recomendación","Manejo de objeción","Cierre comercial"];
+function renderGauges(){
+  const m = game.metrics;
+  setGauge("confianza", m.confianza);
+  setGauge("satisfaccion", m.satisfaccion);
+  setGauge("claridad", m.claridad);
+  setGauge("probabilidad", m.probabilidad);
+  document.getElementById("phase-label").textContent = PHASE_LABELS[game.stepIndex] || "Cierre";
+}
+function setGauge(key, val){
+  val = Math.max(0, Math.min(100, val));
+  document.getElementById("g-"+key).style.width = val+"%";
+  document.getElementById("g-"+key+"-val").textContent = Math.round(val);
+  const color = val<35 ? "var(--bad)" : (val<70 ? "var(--amber)" : "var(--good)");
+  document.getElementById("g-"+key).style.background = color;
+}
+
+function renderStoreShelf(){
+  const shelf = document.getElementById("store-shelf");
+  shelf.innerHTML = "";
+  const cats = [...new Set(PRODUCTS.map(p=>p.cat))];
+  cats.forEach(cat=>{
+    const h = document.createElement("div");
+    h.className = "shelf-cat"; h.textContent = cat;
+    shelf.appendChild(h);
+    PRODUCTS.filter(p=>p.cat===cat).forEach(p=>{
+      const item = document.createElement("div");
+      item.className = "shelf-item";
+      item.innerHTML = `<span class="ic">${p.icon}</span><span>${p.name}</span>`;
+      item.onclick = ()=>showProductDetail(p.id);
+      shelf.appendChild(item);
+    });
+  });
+  if(game.scenario.focusProducts.length) showProductDetail(game.scenario.focusProducts[0]);
+}
+
+function showProductDetail(id){
+  const p = PRODUCTS.find(x=>x.id===id);
+  const el = document.getElementById("catalog-detail");
+  el.innerHTML = `
+    <h4>${p.icon} ${p.name}</h4>
+    <div class="price">${p.price}</div>
+    <ul>${p.features.map(f=>`<li>${f}</li>`).join("")}</ul>
+    <p style="margin-top:6px;"><b>Beneficio:</b> ${p.benefits}</p>
+    <p style="margin-top:4px;"><b>Uso:</b> ${p.use}</p>
+    <p style="margin-top:4px;"><b>Complementario:</b> ${p.complement}</p>
+  `;
+}
+
+/* =========================================================================
+   FLUJO DE CONVERSACIÓN
+========================================================================= */
+function addSystemMsg(text){
+  const thread = document.getElementById("chat-thread");
+  const d = document.createElement("div");
+  d.className = "msg system";
+  d.textContent = text;
+  thread.appendChild(d);
+  thread.scrollTop = thread.scrollHeight;
+}
+function addMsg(role, text){
+  const thread = document.getElementById("chat-thread");
+  const d = document.createElement("div");
+  d.className = "msg "+role;
+  d.textContent = text;
+  thread.appendChild(d);
+  thread.scrollTop = thread.scrollHeight;
+}
+function addFeedback(tierClass, tagText, bodyText){
+  const thread = document.getElementById("chat-thread");
+  const d = document.createElement("div");
+  d.className = "feedback-box "+tierClass;
+  d.innerHTML = `<span class="tag">${tagText}</span>${bodyText}`;
+  thread.appendChild(d);
+  thread.scrollTop = thread.scrollHeight;
+}
+
+function askCurrentStep(){
+  const step = game.scenario.steps[game.stepIndex];
+  addMsg("client", step.clientLine);
+
+  const hints = document.getElementById("hints-row");
+  hints.innerHTML = "";
+  if(mode==="entrenamiento"){
+    step.hints.forEach(h=>{
+      const chip = document.createElement("div");
+      chip.className = "hint-chip";
+      chip.textContent = "💡 "+h;
+      hints.appendChild(chip);
+    });
+  }
+  document.getElementById("advisor-input").value = "";
+  document.getElementById("char-count").textContent = "0";
+  renderProgress();
+  renderGauges();
+}
+
+document.getElementById("advisor-input").addEventListener("input", e=>{
+  document.getElementById("char-count").textContent = e.target.value.length;
+});
+
+document.getElementById("btn-send").addEventListener("click", handleAdvisorResponse);
+document.getElementById("advisor-input").addEventListener("keydown", e=>{
+  if(e.key==="Enter" && (e.ctrlKey||e.metaKey)) handleAdvisorResponse();
+});
+
+function handleAdvisorResponse(){
+  const input = document.getElementById("advisor-input");
+  const text = input.value.trim();
+  if(!text) return;
+
+  addMsg("advisor", text);
+  const step = game.scenario.steps[game.stepIndex];
+
+  const tone = toneScore(text);
+  const escuchaPts = tone===0 ? 0 : (tone===1 ? 1.5 : 3);
+  game.categoryScores.escucha += escuchaPts;
+  game.escuchaSteps++;
+
+  let mainTier, catKey1, catKey2;
+  if(step.category === "conocimiento_argumentacion"){
+    mainTier = keywordTier(text, step.positives, step.negatives);
+    game.categoryScores.conocimiento += (mainTier/2) * step.points;
+    game.categoryScores.argumentacion += (mainTier/2) * step.points2;
+  } else {
+    mainTier = keywordTier(text, step.positives, step.negatives);
+    game.categoryScores[step.category] += (mainTier/2) * step.points;
+  }
+
+  // actualizar métricas del cliente
+  const m = game.metrics;
+  if(mainTier===0){ m.confianza-=15; m.satisfaccion-=10; }
+  else if(mainTier===1){ m.confianza+=3; m.satisfaccion+=2; }
+  else { m.confianza+=12; m.satisfaccion+=10; }
+
+  if(tone===0){ m.confianza-=8; m.satisfaccion-=6; }
+  if(step.category.includes("diagnostico")) m.claridad += mainTier===2?18:(mainTier===1?8:2);
+  if(step.category.includes("conocimiento") || step.category==="objeciones") m.probabilidad += mainTier===2?16:(mainTier===1?6:-4);
+  if(step.category==="cierre") m.probabilidad += mainTier===2?20:(mainTier===1?5:-8);
+  m.confianza = Math.max(0,Math.min(100,m.confianza));
+  m.satisfaccion = Math.max(0,Math.min(100,m.satisfaccion));
+  m.claridad = Math.max(0,Math.min(100,m.claridad));
+  m.probabilidad = Math.max(0,Math.min(100,m.probabilidad));
+
+  // feedback pedagógico
+  const fbClass = TIER_CLASS[mainTier];
+  const fbText = buildFeedbackText(step, mainTier, tone);
+  addFeedback(fbClass, "Respuesta "+TIER_LABEL[mainTier], fbText);
+
+  // reacción del cliente
+  addMsg("client", step.reactions[mainTier]);
+
+  renderGauges();
+
+  // avanzar
+  game.stepIndex++;
+  if(game.stepIndex < game.scenario.steps.length){
+    setTimeout(askCurrentStep, 550);
+  } else {
+    setTimeout(finishScenario, 700);
+  }
+}
+
+function buildFeedbackText(step, tier, tone){
+  const catNames = {diagnostico:"diagnóstico de necesidad", conocimiento_argumentacion:"conocimiento y argumentación de valor",
+    objeciones:"manejo de objeciones", cierre:"cierre comercial"};
+  const compTxt = catNames[step.category] || step.category;
+  let base = "";
+  if(tier===2) base = `Buena ${compTxt}: tu respuesta fue concreta y orientada al cliente.`;
+  else if(tier===1) base = `Tu ${compTxt} fue aceptable, pero puede ser más específica. Intenta profundizar un poco más.`;
+  else base = `Esta respuesta no demostró ${compTxt} de forma clara. Revisa la pista sugerida para esta fase.`;
+
+  let toneTxt = "";
+  if(tone===0) toneTxt = " Además, el tono percibido fue cortante, lo que puede afectar la confianza del cliente.";
+  else if(tone===2) toneTxt = " El tono fue cordial, lo cual suma a la confianza.";
+
+  return base + toneTxt;
+}
+
+/* =========================================================================
+   RESULTADOS
+========================================================================= */
+function finishScenario(){
+  const cats = game.categoryScores;
+  const experiencia = Math.round((game.metrics.satisfaccion/100)*10*10)/10;
+
+  const maxes = {diagnostico:20, escucha:15, conocimiento:15, argumentacion:15, objeciones:15, experiencia:10, cierre:10};
+  const final = {
+    diagnostico: Math.min(maxes.diagnostico, Math.round(cats.diagnostico*10)/10),
+    escucha: Math.min(maxes.escucha, Math.round(cats.escucha*10)/10),
+    conocimiento: Math.min(maxes.conocimiento, Math.round(cats.conocimiento*10)/10),
+    argumentacion: Math.min(maxes.argumentacion, Math.round(cats.argumentacion*10)/10),
+    objeciones: Math.min(maxes.objeciones, Math.round(cats.objeciones*10)/10),
+    experiencia: Math.min(maxes.experiencia, experiencia),
+    cierre: Math.min(maxes.cierre, Math.round(cats.cierre*10)/10)
+  };
+  const total = Math.round(Object.values(final).reduce((a,b)=>a+b,0));
+
+  Object.keys(final).forEach(k=>player.catTotals[k].push(final[k]));
+
+  // progresión
+  player.completed++;
+  player.xp += 40 + total;
+  player.level = 1 + Math.floor(player.xp/150);
+  player.scoreHistory.push(total);
+  player.bestScore = player.bestScore===null ? total : Math.max(player.bestScore, total);
+  player.bestByScenario = player.bestByScenario || {};
+  player.bestByScenario[game.scenario.id] = Math.max(player.bestByScenario[game.scenario.id]||0, total);
+
+  if(total>=60){
+    const idx = SCENARIOS.findIndex(s=>s.id===game.scenario.id);
+    if(idx>=0 && idx+1<SCENARIOS.length){
+      player.unlocked[SCENARIOS[idx+1].id] = true;
+    }
+  }
+
+  const newBadges = [];
+  BADGES.forEach(b=>{
+    if(!player.badges.has(b.id) && b.check(final, game.metrics)){
+      player.badges.add(b.id);
+      newBadges.push(b);
+    }
+  });
+
+  // actualizar participantData con los resultados ya calculados por el juego
+  // (misma información que usa la pantalla de resultados; no se inventan métricas nuevas)
+  if(participant && participantData){
+    const now = new Date();
+    const tier = perfTier(total);
+    participantData.fechaFinalizacion = now.toISOString();
+    participantData.tiempoTotal = formatDuration(now - participant.fechaInicio);
+    participantData.escenariosCompletados = player.completed;
+    participantData.puntuacionFinal = total;
+    participantData.nivel = tier.label;
+    participantData.estado = player.completed >= SCENARIOS.length ? "Finalizado" : "Incompleto";
+    participantData.competencias = {
+      diagnosticoNecesidades: final.diagnostico,
+      comunicacion: final.escucha,
+      conocimientoProducto: final.conocimiento,
+      manejoObjeciones: final.objeciones,
+      argumentacion: final.argumentacion,
+      cierre: final.cierre,
+      experienciaCliente: final.experiencia
+    };
+  }
+
+  renderResults(total, final, maxes, newBadges);
+}
+
+function perfTier(score){
+  if(score>=90) return {label:"EXPERTO", color:"var(--good)"};
+  if(score>=80) return {label:"AVANZADO", color:"var(--good)"};
+  if(score>=70) return {label:"COMPETENTE", color:"var(--amber-dark)"};
+  if(score>=60) return {label:"EN DESARROLLO", color:"var(--amber-dark)"};
+  return {label:"CRÍTICO", color:"var(--bad)"};
+}
+
+function renderResults(total, final, maxes, newBadges){
+  document.getElementById("screen-game").classList.add("hidden");
+  document.getElementById("screen-results").classList.remove("hidden");
+
+  document.getElementById("res-score").textContent = total;
+  document.getElementById("res-participant").textContent = participant ? participant.nombre : "";
+  const tier = perfTier(total);
+  const tagEl = document.getElementById("res-tag");
+  tagEl.textContent = tier.label;
+  tagEl.style.background = tier.color;
+  tagEl.style.color = "#fff";
+
+  const catNames = {diagnostico:"Diagnóstico de necesidad", escucha:"Escucha y comunicación", conocimiento:"Conocimiento de producto",
+    argumentacion:"Argumentación de valor", objeciones:"Manejo de objeciones", experiencia:"Experiencia del cliente", cierre:"Cierre comercial"};
+  const rows = document.getElementById("cat-rows");
+  rows.innerHTML = "";
+  Object.keys(final).forEach(k=>{
+    const pct = Math.round((final[k]/maxes[k])*100);
+    const row = document.createElement("div");
+    row.className = "cat-row";
+    row.innerHTML = `<div class="cname">${catNames[k]}</div>
+      <div class="ctrack"><div class="cfill" style="width:${pct}%; background:${pct<40?'var(--bad)':pct<70?'var(--amber)':'var(--good)'};"></div></div>
+      <div class="cval">${final[k]}/${maxes[k]}</div>`;
+    rows.appendChild(row);
+  });
+
+  const strengths = [], opps = [];
+  Object.keys(final).forEach(k=>{
+    const pct = final[k]/maxes[k];
+    if(pct>=0.75) strengths.push(strengthLine(k));
+    else if(pct<0.55) opps.push(oppLine(k));
+  });
+  if(!strengths.length) strengths.push("Completaste la misión de principio a fin, lo cual ya es un buen punto de partida.");
+  if(!opps.length) opps.push("Tu desempeño fue parejo en todas las competencias evaluadas.");
+
+  document.getElementById("res-strengths").innerHTML = strengths.map(s=>`<li>${s}</li>`).join("");
+  document.getElementById("res-opps").innerHTML = opps.map(s=>`<li>${s}</li>`).join("");
+  document.getElementById("res-reco").textContent = buildRecommendation(final, maxes);
+
+  const rewards = document.getElementById("res-rewards");
+  rewards.innerHTML = `<div class="reward-pill">⭐ +${40+total} XP</div>`;
+  newBadges.forEach(b=>{
+    rewards.innerHTML += `<div class="reward-pill">${b.icon} ${b.name} <span style="color:var(--neutral); font-size:11px;">(nueva)</span></div>`;
+  });
+
+  document.getElementById("btn-retry").onclick = ()=>startScenario(game.scenario.id);
+  const nextBtn = document.getElementById("btn-next");
+  const idx = SCENARIOS.findIndex(s=>s.id===game.scenario.id);
+  const next = SCENARIOS[idx+1];
+  if(next && player.unlocked[next.id]){
+    nextBtn.textContent = "Siguiente escenario →";
+    nextBtn.disabled = false;
+    nextBtn.onclick = ()=>startScenario(next.id);
+  } else if(next){
+    nextBtn.textContent = "Supera 60/100 para desbloquear el siguiente";
+    nextBtn.disabled = true;
+  } else {
+    nextBtn.textContent = "Has completado todos los escenarios";
+    nextBtn.disabled = true;
+  }
+}
+
+function strengthLine(k){
+  const lines = {
+    diagnostico:"Identificaste correctamente la necesidad del cliente mediante buenas preguntas.",
+    escucha:"Mantuviste una comunicación clara y respetuosa durante toda la interacción.",
+    conocimiento:"Demostraste conocimiento sólido del producto recomendado.",
+    argumentacion:"Explicaste el valor del producto de forma convincente, más allá del precio.",
+    objeciones:"Manejaste las objeciones del cliente con seguridad y sin ceder solo por presión.",
+    experiencia:"El cliente terminó la interacción con un alto nivel de satisfacción.",
+    cierre:"Cerraste la venta de forma natural, sin presionar al cliente."
+  };
+  return lines[k];
+}
+function oppLine(k){
+  const lines = {
+    diagnostico:"Podrías profundizar más en el diagnóstico antes de pasar a recomendar.",
+    escucha:"Cuida el tono de tus respuestas; puede afectar la confianza del cliente.",
+    conocimiento:"Refuerza los datos técnicos de los productos antes de recomendarlos.",
+    argumentacion:"Explica con más detalle el beneficio real del producto, no solo su nombre.",
+    objeciones:"Evita ceder de inmediato ante una objeción; primero explica el valor.",
+    experiencia:"La satisfacción del cliente quedó baja; revisa el tono y la escucha activa.",
+    cierre:"Intentaste cerrar de forma un poco abrupta; ofrece opciones antes de cerrar."
+  };
+  return lines[k];
+}
+function buildRecommendation(final, maxes){
+  let lowestKey=null, lowestPct=2;
+  Object.keys(final).forEach(k=>{
+    const pct = final[k]/maxes[k];
+    if(pct<lowestPct){lowestPct=pct; lowestKey=k;}
+  });
+  const recos = {
+    diagnostico:"Antes de recomendar un producto, realiza al menos dos preguntas de diagnóstico para entender bien la necesidad.",
+    escucha:"Cuida el tono de tus mensajes: frases cordiales generan más confianza incluso con clientes difíciles.",
+    conocimiento:"Repasa la ficha técnica de los productos antes de la próxima misión; te ayudará a responder con más seguridad.",
+    argumentacion:"Practica explicar el beneficio (no solo la característica) de cada producto que recomiendes.",
+    objeciones:"Ante una objeción de precio, explica el valor primero; evita ofrecer descuentos de inmediato.",
+    experiencia:"Enfócate en la calidad general de la atención: eso eleva la satisfacción incluso si no cierras la venta.",
+    cierre:"Practica frases de cierre que ofrezcan opciones sin presionar, como venta complementaria natural."
+  };
+  return recos[lowestKey] || "Buen desempeño general. Sigue practicando escenarios de mayor dificultad.";
+}
+
+/* =========================================================================
+   INIT
+========================================================================= */
+initRegisterForm();
+renderHome();
+</script>
+</body>
+</html>
