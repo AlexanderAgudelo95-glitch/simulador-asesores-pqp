@@ -558,12 +558,35 @@ function toneScore(text){
 }
 
 function keywordTier(text, positives, negatives){
-  const t = text.toLowerCase();
-  if(t.trim().split(/\s+/).length < 3) return 0; // respuesta demasiado corta
-  let score = positives.filter(k=>t.includes(k)).length;
-  score -= negatives.filter(k=>t.includes(k)).length * 1.5;
-  if(score<=0) return 0;
-  if(score<2) return 1;
+  const t = text.toLowerCase().trim();
+  const words = t.split(/\s+/);
+
+  // Respuestas demasiado cortas
+  if(words.length < 4) return 0;
+
+  let score = 0;
+
+  // Evalúa conceptos positivos
+  positives.forEach(k => {
+    const keyword = k.toLowerCase().trim();
+
+    if(t.includes(keyword)){
+      score += keyword.split(/\s+/).length > 1 ? 1.5 : 1;
+    }
+  });
+
+  // Penaliza respuestas con conceptos claramente negativos
+  negatives.forEach(k => {
+    const keyword = k.toLowerCase().trim();
+
+    if(t.includes(keyword)){
+      score -= 1.5;
+    }
+  });
+
+  if(score <= 0) return 0;
+  if(score < 2) return 1;
+
   return 2;
 }
 
