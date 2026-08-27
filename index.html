@@ -1987,11 +1987,55 @@ function showFinalReport(){
   renderFinalReport();
   window.scrollTo({top:0, behavior:"instant"});
 }
+async function enviarResultadosGoogleSheets() {
+  if (!participantData) return;
+  
+if (participantData.enviadoGoogleSheets) return;
+participantData.enviadoGoogleSheets = true;
+  
+  const datos = {
+    participantId: participantData.participantId,
+    nombre: participantData.nombre,
+    correo: participantData.correo,
+    cargo: participantData.cargo,
+    modo: participantData.modo || "Simulación",
+    area: participantData.area,
+    fechaInicio: participantData.fechaInicio,
+    fechaFinalizacion: participantData.fechaFinalizacion,
+    tiempoTotal: participantData.tiempoTotal,
+    escenariosCompletados: participantData.escenariosCompletados,
+    puntuacionFinal: participantData.puntuacionFinal,
+    nivel: participantData.nivel,
+    estado: participantData.estado
+  };
 
+  try {
+    const respuesta = await fetch("https://script.google.com/macros/s/AKfycbwtEEvWdyhUR37RYrl7s-Q-CXrjWvwWBGgC5Xd3tFIyp9T0vPG0CtfR0vHzuw1-7pyt/exec", {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
+      body: JSON.stringify(datos)
+    });
+
+    console.log("Resultados enviados a Google Sheets.");
+  } catch (error) {
+    console.error("No se pudieron enviar los resultados:", error);
+  }
+}
 function renderFinalReport(){
   const scenarioList = buildScenarioBreakdown();
   if(!scenarioList.length) return;
   const overallTotal = Math.round(scenarioList.reduce((a,r)=>a+r.total,0)/scenarioList.length);
+  participantData.fechaFinalizacion = new Date().toISOString();
+  participantData.tiempoTotal = formatDuration(new Date() - new Date(participantData.fechaInicio));
+  participantData.escenariosCompletados = player.completedScenarioIds.size;
+  participantData.puntuacionFinal = overallTotal;
+  participantData.nivel = reportTier(overallTotal).label;
+  participantData.estado = "Completado";
+
+  enviarResultadosGoogleSheets();
   const pct = aggregatePctByCategory();
   const adaptacion = computeAdaptacion();
 
