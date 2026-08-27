@@ -240,6 +240,12 @@ textarea#advisor-input:focus{outline:2px solid var(--amber); border-color:transp
   display:inline-block; margin-top:6px; padding:5px 14px; border-radius:20px; font-size:12px; font-weight:600;
   font-family:var(--font-mono);
 }
+.status-pill{
+  display:inline-block; margin-top:8px; margin-left:8px; padding:5px 14px; border-radius:20px; font-size:11.5px; font-weight:600;
+  font-family:var(--font-mono); background:rgba(255,255,255,0.14); color:#fff;
+}
+.status-pill.approved{background:rgba(62,142,90,0.28); color:#CDEFDA;}
+.status-pill.developing{background:rgba(226,146,40,0.26); color:#FBDFAE;}
 .cat-breakdown{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin-bottom:16px;}
 .cat-row{display:flex; align-items:center; gap:12px; margin-bottom:12px;}
 .cat-row:last-child{margin-bottom:0;}
@@ -294,6 +300,24 @@ textarea#advisor-input:focus{outline:2px solid var(--amber); border-color:transp
 .register-footnote{font-size:11px; color:var(--neutral); margin-top:6px; line-height:1.5;}
 .field-row{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
 @media (max-width:520px){.field-row{grid-template-columns:1fr;}}
+
+/* ---------- REPORTE FINAL DE EVALUACIÓN ---------- */
+.report-nav{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px;}
+.report-nav .btn{font-size:11.5px; padding:7px 12px;}
+.scenario-score-row{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:22px;}
+.scenario-score-card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; text-align:center;}
+.scenario-score-card .ssc-title{font-size:12px; color:var(--neutral); margin-bottom:8px;}
+.scenario-score-card .ssc-score{font-family:var(--font-mono); font-size:24px; font-weight:600; color:var(--petrol-900);}
+.profile-card{background:var(--petrol-900); color:#fff; border-radius:var(--radius); padding:22px 24px; margin-bottom:20px;}
+.profile-card .pc-label{font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--amber);}
+.profile-card h3{font-size:19px; margin:6px 0 8px; color:#fff;}
+.training-row{display:flex; align-items:flex-start; gap:12px; padding:12px 0; border-bottom:1px solid var(--line);}
+.training-row:last-child{border-bottom:none;}
+.priority-tag{font-family:var(--font-mono); font-size:10px; font-weight:600; padding:4px 9px; border-radius:14px; text-transform:uppercase; white-space:nowrap; margin-top:1px;}
+.priority-tag.alta{background:var(--bad-bg); color:var(--bad);}
+.priority-tag.media{background:#FFF7EA; color:var(--amber-dark);}
+.priority-tag.fortaleza{background:var(--good-bg); color:var(--good);}
+@media (max-width:640px){.scenario-score-row{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -360,6 +384,8 @@ textarea#advisor-input:focus{outline:2px solid var(--amber); border-color:transp
       <p>Entra al punto de venta de QuimiCasa, atiende clientes simulados con necesidades, dudas y objeciones distintas, y recibe una evaluación de tus competencias comerciales al estilo de un entrenamiento profesional.</p>
     </div>
 
+    <div id="final-report-banner"></div>
+
     <div class="section-title"><h2>Tu desempeño</h2><span class="hint">Se actualiza después de cada misión</span></div>
     <div class="dash-grid">
       <div class="dash-card"><div class="k">Nivel del asesor</div><div class="v" id="dash-level">1</div></div>
@@ -386,7 +412,7 @@ textarea#advisor-input:focus{outline:2px solid var(--amber); border-color:transp
       </div>
     </div>
 
-    <div class="section-title"><h2>Escenarios disponibles</h2><span class="hint">Desbloquea el siguiente superando 60/100</span></div>
+    <div class="section-title"><h2>Escenarios disponibles</h2><span class="hint">Se desbloquean al completar el anterior</span></div>
     <div class="scenario-grid" id="scenario-grid"></div>
   </div>
 
@@ -462,6 +488,7 @@ textarea#advisor-input:focus{outline:2px solid var(--amber); border-color:transp
         <h3 id="res-participant" style="color:#fff; font-size:15px; margin-top:4px;">—</h3>
         <div class="big"><span id="res-score">0</span><span>/100</span></div>
         <div class="perf-tag" id="res-tag">—</div>
+        <div class="status-pill" id="res-status">—</div>
       </div>
 
       <div class="cat-breakdown" id="cat-breakdown">
@@ -491,7 +518,70 @@ textarea#advisor-input:focus{outline:2px solid var(--amber); border-color:transp
     </div>
   </div>
 
+  <!-- ================= REPORTE FINAL DE EVALUACIÓN ================= -->
+  <div id="screen-report" class="hidden">
+    <div class="hero" style="padding:26px 30px;">
+      <div class="hero-eyebrow">Evaluación comercial final</div>
+      <h1 style="font-size:24px;">Reporte de desempeño<span id="report-participant-wrap">, <span id="report-participant"></span></span></h1>
+      <p>Construido a partir de tus interacciones reales en los tres escenarios completados — no es un puntaje aleatorio.</p>
+    </div>
+
+    <div class="report-nav">
+      <button class="btn btn-ghost" onclick="scrollToReportSection('rep-resumen')">Resumen</button>
+      <button class="btn btn-ghost" onclick="scrollToReportSection('rep-competencias')">Competencias</button>
+      <button class="btn btn-ghost" onclick="scrollToReportSection('rep-escenarios')">Escenarios</button>
+      <button class="btn btn-ghost" onclick="scrollToReportSection('rep-fortalezas')">Fortalezas</button>
+      <button class="btn btn-ghost" onclick="scrollToReportSection('rep-oportunidades')">Oportunidades</button>
+      <button class="btn btn-ghost" onclick="scrollToReportSection('rep-analisis')">Análisis</button>
+      <button class="btn btn-ghost" onclick="scrollToReportSection('rep-perfil')">Perfil</button>
+      <button class="btn btn-ghost" onclick="scrollToReportSection('rep-formacion')">Formación</button>
+    </div>
+
+    <div id="rep-resumen" class="score-hero">
+      <div class="label">Resultado general</div>
+      <div class="big"><span id="report-score">0</span><span>/100</span></div>
+      <div class="perf-tag" id="report-tier">—</div>
+      <p id="report-interpretation" style="color:var(--petrol-100); font-size:13px; margin-top:10px;">—</p>
+    </div>
+
+    <div id="rep-competencias" class="cat-breakdown">
+      <h4 style="font-size:13px; margin-bottom:14px;">Evaluación cuantitativa por competencia</h4>
+      <div id="report-indicators"></div>
+    </div>
+
+    <div id="rep-escenarios">
+      <div class="section-title"><h2>Desempeño por escenario</h2><span class="hint">Cada tipo de cliente prioriza competencias distintas</span></div>
+      <div class="scenario-score-row" id="report-scenario-cards"></div>
+    </div>
+
+    <div class="feedback-cols">
+      <div id="rep-fortalezas" class="fb-col strengths"><h4>✓ Fortalezas</h4><ul id="report-strengths"></ul></div>
+      <div id="rep-oportunidades" class="fb-col opps"><h4>△ Oportunidades de mejora</h4><ul id="report-opps"></ul></div>
+    </div>
+
+    <div id="rep-analisis" class="cat-breakdown">
+      <h4 style="font-size:13px; margin-bottom:10px;">Análisis de desempeño</h4>
+      <p id="report-analysis" style="font-size:13.5px; line-height:1.65; color:#3C4643;">—</p>
+    </div>
+
+    <div id="rep-perfil" class="profile-card">
+      <div class="pc-label">Perfil comercial</div>
+      <h3 id="report-profile-name">—</h3>
+      <p id="report-profile-desc" style="color:var(--petrol-100); font-size:13.5px;">—</p>
+    </div>
+
+    <div id="rep-formacion" class="cat-breakdown">
+      <h4 style="font-size:13px; margin-bottom:6px;">Recomendaciones de formación</h4>
+      <div id="report-training"></div>
+    </div>
+
+    <div class="result-actions" style="margin-top:6px; margin-bottom:30px;">
+      <button class="btn btn-dark" onclick="goHome()">← Volver a escenarios</button>
+    </div>
+  </div>
+
 </div>
+
 
 <script>
 /* =========================================================================
@@ -541,57 +631,241 @@ const PRODUCTS = [
 ];
 
 /* =========================================================================
-   MOTOR DE ANÁLISIS DE RESPUESTAS (heurístico, en español)
+   MOTOR DE ANÁLISIS DE RESPUESTAS — EVALUACIÓN POR CRITERIOS DE COMPETENCIA
+   ---------------------------------------------------------------------
+   Este motor NO evalúa coincidencia literal de palabras clave. Evalúa la
+   PRESENCIA de conceptos/competencias (bancos amplios de sinónimos y
+   formulaciones naturales) y patrones de comportamiento estructurales
+   (¿hizo una pregunta?, ¿recomendó sin diagnosticar?, ¿empujó la venta sin
+   sustento?). Cada paso define una pequeña rúbrica: qué competencias se
+   esperan (requiredConcepts), qué suma puntos extra (bonusConcepts) y qué
+   es una señal de alerta (negativeConcepts / fallas duras universales).
 ========================================================================= */
-const TONE_POSITIVE = ["con gusto","claro que","entiendo","comprendo","por supuesto","cuénteme","perfecto","gracias por","permítame","le ayudo","no se preocupe","tranquilo","con mucho gusto"];
-const TONE_NEGATIVE = ["no tengo tiempo","no es mi problema","eso no se puede","apúrese","ya le dije","no puedo hacer nada","no sé","arrégleselas","no me diga eso","es lo que hay"];
 
-function toneScore(text){
-  const t = text.toLowerCase();
-  let pos = TONE_POSITIVE.filter(k=>t.includes(k)).length;
-  let neg = TONE_NEGATIVE.filter(k=>t.includes(k)).length;
-  const shouty = (text.match(/[A-ZÁÉÍÓÚÑ]{5,}/g)||[]).length;
-  neg += shouty;
-  if(neg>0) return 0;
-  if(pos>0) return 2;
-  return 1; // neutral, sin marcadores claros
+function normalizeText(s){
+  return s.toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")   // quita tildes
+    .replace(/[¿?¡!.,;:()"'\-]/g," ")
+    .replace(/\s+/g," ")
+    .trim();
 }
 
-function keywordTier(text, positives, negatives){
-  const t = text.toLowerCase().trim();
-  const words = t.split(/\s+/);
+/* Bancos de conceptos: cada uno agrupa MUCHAS formas naturales distintas
+   de expresar la misma competencia o señal, no una única frase exacta. */
+const CONCEPTS = {
+  ASK_QUESTION: [
+    "que tipo","qué tipo","para qué","para que","que necesita","qué necesita",
+    "cuánto","cuanto","cómo es","como es","dónde","donde","cuándo","cuando",
+    "cuál","cual","me podría decir","me puede decir","cuénteme","cuenteme",
+    "podría contarme","podria contarme","qué prefiere","que prefiere","me cuenta"
+  ],
+  DIAGNOSTIC_INFO_GATHER: [
+    "qué necesita","que necesita","para qué lo necesita","para que lo necesita",
+    "qué tipo de","que tipo de","con qué frecuencia","con que frecuencia",
+    "cada cuánto","cada cuanto","qué cantidad","que cantidad","qué prefiere","que prefiere",
+    "tiene alguna preferencia","cuál es el problema","cual es el problema",
+    "qué está buscando","que esta buscando","dónde lo va a usar","donde lo va a usar",
+    "en qué lo va a usar","en que lo va a usar","qué superficie","que superficie",
+    "qué cultivo","que cultivo","qué planta","que planta","hace cuánto","hace cuanto",
+    "desde cuándo","desde cuando","cuánto tiempo","cuanto tiempo","qué síntomas","que sintomas",
+    "cómo se ve","como se ve","qué color","que color","tipo de suelo","cómo es el suelo",
+    "como es el suelo","cuánto riega","cuanto riega","qué tanto sol","que tanto sol",
+    "cuál es su presupuesto","cual es su presupuesto","cuánto quiere invertir","cuanto quiere invertir",
+    "ha usado algo antes","qué ha probado","que ha probado","le ha funcionado algo","qué le ha funcionado",
+    "cuénteme más","cuenteme mas","cuénteme un poco más","cuenteme un poco mas","platíqueme","platiqueme",
+    "cuál es su situación","cual es su situacion","qué área","que area",
+    "primero revisaría","primero revisaria","conviene revisar","habría que revisar","habria que revisar",
+    "voy a revisar","quisiera revisar primero","revisaría el","revisaria el"
+  ],
+  EMPATHY_VALIDATION: [
+    "entiendo","comprendo","es entendible","tiene razón","tiene razon","es normal",
+    "es válido","es valido","buena pregunta","es una buena pregunta","me parece razonable",
+    "lo entiendo perfectamente","claro que sí","claro que si","por supuesto","no se preocupe",
+    "tranquilo","tranquila","lamento","siento que","es comprensible","hace bien en preguntar",
+    "hace bien en preocuparse","totalmente válido","totalmente valido","con gusto","con mucho gusto"
+  ],
+  HEDGING_HONEST: [
+    "puede depender","podría depender","podria depender","no le puedo garantizar","no le garantizo",
+    "depende de","no quisiera prometer","no quisiera garantizar","varía según","varia segun",
+    "puede variar","no siempre funciona igual","cada caso es distinto","cada situación es diferente",
+    "cada situacion es diferente","le recomiendo probar","podemos revisar primero","lo ideal es revisar",
+    "sin conocer","sin saber","sería bueno revisar","seria bueno revisar","sin garantizarle",
+    "no puedo asegurarle","puede influir","puede afectar","puede jugar un papel",
+    "no todos los casos son iguales","hay que tener en cuenta","podría deberse a","podria deberse a",
+    "puede deberse a","hay varias causas","puede haber varias causas","varias posibles causas",
+    "no necesariamente significa que","no es posible saberlo con certeza","habría que revisar primero"
+  ],
+  OVERPROMISE_RED_FLAG: [
+    "le garantizo que funciona","le aseguro que funciona","siempre funciona","nunca falla",
+    "le prometo que","seguro le va a funcionar","100% garantizado","sin duda le va a funcionar",
+    "funciona en cualquier","no importa el suelo","el suelo no afecta","no afecta el resultado",
+    "le aseguro que sí","con toda seguridad funciona","le doy mi palabra de que funciona",
+    "funciona seguro","le va a funcionar sí o sí"
+  ],
+  DISMISSIVE_RED_FLAG: [
+    "eso no es mi problema","no tengo idea","ya le dije","no puedo hacer nada",
+    "arréglelas usted","es lo que hay","eso no me compete","no es mi culpa",
+    "averigüe usted","averigue usted","no me pregunte a mí","eso no me toca a mí"
+  ],
+  PRODUCT_BENEFIT_LANGUAGE: [
+    "le ayuda","le sirve","el beneficio es","la ventaja es","rinde","dura más","dura mas",
+    "es más eficiente","es mas eficiente","mejora el rendimiento","cunde más","cunde mas",
+    "le resulta más económico","le resulta mas economico","a largo plazo",
+    "por uso sale más barato","por uso sale mas barato","es efectivo","funciona bien para",
+    "está formulado para","esta formulado para","fue diseñado para","fue disenado para",
+    "ideal para","recomendado para","le va a servir","pensado para","le resuelve",
+    "aporta nutrientes","aporta","de forma equilibrada","nutrición equilibrada","nutricion equilibrada",
+    "aporta beneficios","le da","le proporciona","contribuye a"
+  ],
+  COMPARISON_OR_EXPLANATION: [
+    "la diferencia es","se diferencia en","a diferencia de","mientras que","en cambio",
+    "por otro lado","comparado con","versus","le explico que","la razón es","la razon es",
+    "esto se debe a","esto es porque","por eso","eso es porque"
+  ],
+  VALUE_OVER_PRICE: [
+    "rinde más","rinde mas","le sale mejor a largo plazo","el valor está en","el valor esta en",
+    "no es lo mismo","la calidad se nota","por eso vale ese precio","justifica el precio",
+    "el precio se debe a","vale la pena por","compensa con"
+  ],
+  DISCOUNT_CAVE: [
+    "le bajo el precio","le hago un descuento","se lo dejo más barato","se lo dejo mas barato",
+    "le regalo","le puedo rebajar","le doy un descuento"
+  ],
+  CLOSING_LANGUAGE: [
+    "le gustaría llevar","le gustaria llevar","desea que se lo empaque","algo más que necesite",
+    "algo mas que necesite","le incluyo también","le incluyo tambien","le puedo ofrecer también",
+    "le puedo ofrecer tambien","lo llevamos entonces","sería todo","seria todo",
+    "confirmamos el pedido","procedo a empacar","le parece bien así","le parece bien asi",
+    "quedamos así entonces","quedamos asi entonces","con eso quedaría listo","con eso quedaria listo",
+    "se lo empaco","le empaco","empaco esto","le preparo el pedido","le sirvo algo más","le sirvo algo mas",
+    "algo más también","algo mas tambien","necesita algo más","necesita algo mas","desea algo más","desea algo mas"
+  ],
+  PUSHY_RED_FLAG: [
+    "tiene que llevarlo","debe comprarlo ya","aproveche ahora","es ahora o nunca",
+    "no lo va a encontrar en otro lado","última oportunidad","ultima oportunidad",
+    "cómprelo ya","comprelo ya"
+  ]
+};
+const NORMALIZED_CONCEPTS = {};
+Object.keys(CONCEPTS).forEach(k=>{ NORMALIZED_CONCEPTS[k] = CONCEPTS[k].map(normalizeText); });
 
-  // Respuestas demasiado cortas
-  if(words.length < 4) return 0;
+const HARD_FAIL_CONCEPTS = new Set(["OVERPROMISE_RED_FLAG","DISMISSIVE_RED_FLAG","PUSHY_RED_FLAG"]);
+const GENERIC_RECOMMEND_PHRASES = ["le recomiendo","le sugiero","lleve este","le muestro este","le traigo este","le ofrezco este","este producto le sirve","este es el que necesita","le paso este"].map(normalizeText);
 
-  let score = 0;
-
-  // Evalúa conceptos positivos
-  positives.forEach(k => {
-    const keyword = k.toLowerCase().trim();
-
-    if(t.includes(keyword)){
-      score += keyword.split(/\s+/).length > 1 ? 1.5 : 1;
-    }
+function isRecommendingSomething(norm){
+  if(GENERIC_RECOMMEND_PHRASES.some(p=>norm.includes(p))) return true;
+  return PRODUCTS.some(p=>{
+    const firstWord = normalizeText(p.name.split(" ")[0]);
+    return firstWord.length>3 && norm.includes(firstWord);
   });
+}
 
-  // Penaliza respuestas con conceptos claramente negativos
-  negatives.forEach(k => {
-    const keyword = k.toLowerCase().trim();
-
-    if(t.includes(keyword)){
-      score -= 1.5;
-    }
+/* Detecta qué conceptos/competencias están presentes en una respuesta,
+   sin importar el orden o la formulación exacta de las palabras. */
+function detectConcepts(rawText, norm, hasQuestionMark){
+  const present = new Set();
+  Object.keys(NORMALIZED_CONCEPTS).forEach(key=>{
+    if(NORMALIZED_CONCEPTS[key].some(p=>norm.includes(p))) present.add(key);
   });
+  if(hasQuestionMark) present.add("ASK_QUESTION");
+  if(isRecommendingSomething(norm)) present.add("RECOMMEND_PRODUCT_NAME");
+  return present;
+}
 
-  if(score <= 0) return 0;
-  if(score < 2) return 1;
+/* Tono general de la respuesta (para la competencia de escucha/comunicación).
+   Se basa en los mismos bancos de conceptos, no en frases exclusivas. */
+function toneScore(rawText){
+  const norm = normalizeText(rawText);
+  const shouty = (rawText.match(/[A-ZÁÉÍÓÚÑ]{5,}/g)||[]).length;
+  if(shouty>0 || NORMALIZED_CONCEPTS.DISMISSIVE_RED_FLAG.some(p=>norm.includes(p))) return 0;
+  if(NORMALIZED_CONCEPTS.EMPATHY_VALIDATION.some(p=>norm.includes(p))) return 2;
+  return 1; // neutral: ni cordial ni cortante
+}
 
-  return 2;
+/* =========================================================================
+   EVALUACIÓN POR RÚBRICA
+   Cada "step" (o sub-rúbrica dentro de un step) define:
+     requiredConcepts  -> competencias centrales esperadas en esta fase
+     bonusConcepts     -> aportan valor adicional pero no son obligatorias
+     negativeConcepts  -> señales de alerta específicas de esta fase (p.ej.
+                          ceder de inmediato en precio) que impiden "Sólida"
+     minSolid          -> cuántos conceptos (required+bonus) se necesitan
+                          para considerar la respuesta "Sólida"
+     requiresDiagnosisFirst -> si es un paso de diagnóstico, recomendar un
+                          producto sin preguntar nada es una falla dura
+
+   Devuelve {tier, flags, matched} donde tier: 0=Débil, 1=Aceptable, 2=Sólida.
+   IMPORTANTE: el conteo es por CATEGORÍA DE CONCEPTO presente (sí/no), no
+   por número de palabras ni longitud del texto — una respuesta larga que
+   repite la misma idea no puntúa más que una corta que la dice una vez.
+========================================================================= */
+function evaluateStep(rawText, rubric){
+  const hasQ = /\?/.test(rawText);
+  const norm = normalizeText(rawText);
+  if(norm.length===0) return {tier:0, flags:["sin_respuesta"], matched:[]};
+
+  const present = detectConcepts(rawText, norm, hasQ);
+
+  // Fallas duras universales: promesas irresponsables, trato despectivo,
+  // presión de cierre agresiva. Estas invalidan la respuesta sin importar
+  // qué más se haya dicho.
+  const hardHits = [...HARD_FAIL_CONCEPTS].filter(k=>present.has(k));
+  if(hardHits.length>0) return {tier:0, flags:hardHits, matched:[...present]};
+
+  // Empuje sin sustento: respuestas breves tipo "llévelo"/"cómprelo" sin
+  // ningún respaldo de diagnóstico, conocimiento, empatía o explicación.
+  const wc = norm.split(" ").filter(Boolean).length;
+  const pushStems = ["llev","compr"];
+  const hasPushStem = pushStems.some(s=>norm.includes(s));
+  const hasSubstance = present.has("DIAGNOSTIC_INFO_GATHER") || present.has("PRODUCT_BENEFIT_LANGUAGE") ||
+    present.has("EMPATHY_VALIDATION") || present.has("HEDGING_HONEST") || present.has("COMPARISON_OR_EXPLANATION") ||
+    present.has("VALUE_OVER_PRICE") || present.has("CLOSING_LANGUAGE");
+  if(hasPushStem && wc<=6 && !hasSubstance){
+    return {tier:0, flags:["empuja_sin_sustento"], matched:[...present]};
+  }
+
+  // Recomienda sin diagnosticar (solo aplica en fases de diagnóstico).
+  if(rubric.requiresDiagnosisFirst && present.has("RECOMMEND_PRODUCT_NAME") &&
+     !present.has("ASK_QUESTION") && !present.has("DIAGNOSTIC_INFO_GATHER")){
+    return {tier:0, flags:["recomienda_sin_diagnosticar"], matched:[...present]};
+  }
+
+  const softNeg = (rubric.negativeConcepts||[]).filter(k=>present.has(k));
+  const req = rubric.requiredConcepts||[];
+  const bonus = rubric.bonusConcepts||[];
+  const reqHits = req.filter(k=>present.has(k));
+  const bonusHits = bonus.filter(k=>present.has(k));
+  const totalGood = reqHits.length + bonusHits.length;
+  const minSolid = rubric.minSolid!=null ? rubric.minSolid : 2;
+
+  let tier;
+  if(reqHits.length>0 && totalGood>=minSolid && softNeg.length===0){
+    tier = 2;
+  } else if(reqHits.length>0 || totalGood>=1){
+    tier = 1;
+  } else {
+    tier = 0;
+  }
+  return {tier, flags:softNeg, matched:[...present]};
+}
+
+/* Detección de personalización: ¿la respuesta del asesor retoma vocabulario
+   propio de ESTE cliente/escenario (lo que él mismo mencionó), en vez de
+   una respuesta genérica de plantilla? No es una lista fija por paso, se
+   evalúa contra el contexto real de cada escenario (scenario.contextTerms). */
+function usesClientContext(rawText, scenario){
+  if(!scenario || !scenario.contextTerms) return false;
+  const norm = normalizeText(rawText);
+  return scenario.contextTerms.some(term=>norm.includes(normalizeText(term)));
 }
 
 const TIER_LABEL = {0:"Débil",1:"Aceptable",2:"Sólida"};
 const TIER_CLASS = {0:"bad",1:"mid",2:"good"};
+// Peso de cada nivel sobre los puntos de la categoría: Débil no suma,
+// Aceptable ya representa un desempeño funcional (70%), Sólida es el 100%.
+const TIER_WEIGHT = {0:0, 1:0.70, 2:1.0};
+// Peso del tono sobre la competencia de Escucha y comunicación (máx. 3/paso).
+const ESCUCHA_WEIGHT = {0:0, 1:2, 2:3};
 
 /* =========================================================================
    ESCENARIOS
@@ -613,12 +887,12 @@ const SCENARIOS = [
     description:"Un cliente claro, amable y con disposición a comprar. Ideal para aprender el flujo básico de atención.",
     unlockedByDefault:true,
     focusProducts:["brillamax","pisoshine"],
+    contextTerms:["pisos","piso","cerámica","ceramica","baño","bano","cocina","cítrico","citrico","aroma","diario"],
     steps:[
       {
         category:"diagnostico", points:10,
         clientLine:"Buenos días. Estoy buscando algo para limpiar mi casa, algo que rinda bien.",
-        positives:["qué tipo","para qué","superficie","frecuencia","prefiere","presupuesto","marca","cuánto","dónde","qué necesita","cómo es"],
-        negatives:["le recomiendo","lleve este","le muestro este producto"],
+        requiredConcepts:["ASK_QUESTION","DIAGNOSTIC_INFO_GATHER"], minSolid:2, requiresDiagnosisFirst:true,
         hints:["¿Qué superficies necesita limpiar principalmente?","¿Con qué frecuencia hace este tipo de limpieza?"],
         reactions:{
           0:"Ehh... no sé, algo que limpie bien nada más.",
@@ -629,8 +903,7 @@ const SCENARIOS = [
       {
         category:"diagnostico", points:10,
         clientLine:"Uso algo casi a diario, sobre todo en la cocina.",
-        positives:["olor","aroma","ha usado","qué marca","le ha funcionado","cuánto gasta","cantidad","cuánto compra","alguna preferencia"],
-        negatives:["le recomiendo","lleve este"],
+        requiredConcepts:["ASK_QUESTION","DIAGNOSTIC_INFO_GATHER"], minSolid:2, requiresDiagnosisFirst:true,
         hints:["¿Ha usado alguna marca antes que le haya funcionado bien?","¿Prefiere algún aroma en particular?"],
         reactions:{
           0:"No sé, cualquiera está bien creo.",
@@ -641,8 +914,8 @@ const SCENARIOS = [
       {
         category:"conocimiento_argumentacion", points:15, points2:15,
         clientLine:"¿Y cuál me recomienda entonces?",
-        positives:["concentrado","rinde","aroma cítrico","brillamax","beneficio","cunde","económico por uso","superficie","garantía","calidad"],
-        negatives:[],
+        rubricConocimiento:{requiredConcepts:["PRODUCT_BENEFIT_LANGUAGE"], minSolid:1},
+        rubricArgumentacion:{requiredConcepts:["COMPARISON_OR_EXPLANATION","VALUE_OVER_PRICE"], bonusConcepts:["PRODUCT_BENEFIT_LANGUAGE"], minSolid:1},
         hints:["Le recomiendo BrillaMax: es concentrado y rinde hasta 40 lavados.","Explique el beneficio, no solo el nombre del producto."],
         reactions:{
           0:"Ah, bueno... no entendí muy bien por qué ese.",
@@ -653,8 +926,8 @@ const SCENARIOS = [
       {
         category:"objeciones", points:15,
         clientLine:"¿No es un poco caro comparado con otras marcas más económicas?",
-        positives:["rinde","dura más","por uso","calidad","le explico","comparado","a largo plazo","concentrado","garantía","vale la pena"],
-        negatives:["le bajo el precio","le regalo","no es caro","obviamente no"],
+        requiredConcepts:["VALUE_OVER_PRICE","COMPARISON_OR_EXPLANATION"], bonusConcepts:["PRODUCT_BENEFIT_LANGUAGE"], minSolid:2,
+        negativeConcepts:["DISCOUNT_CAVE"],
         hints:["Explique el valor: rinde más, así que el costo por uso es menor.","No compita solo por precio, compare el rendimiento."],
         reactions:{
           0:"Mmm, no sé, creo que mejor busco algo más barato.",
@@ -665,8 +938,7 @@ const SCENARIOS = [
       {
         category:"cierre", points:10,
         clientLine:"Listo, ¿algo más que me recomiende llevar?",
-        positives:["también le sirve","complementa","le puede interesar","le gustaría llevar","algo más","le facilita","junto con"],
-        negatives:["no","nada más","ya"],
+        requiredConcepts:["CLOSING_LANGUAGE"], bonusConcepts:["PRODUCT_BENEFIT_LANGUAGE"], minSolid:1,
         hints:["Ofrezca un producto complementario relacionado.","Cierre con una invitación cordial a regresar."],
         reactions:{
           0:"Ah, bueno, entonces solo esto.",
@@ -687,12 +959,12 @@ const SCENARIOS = [
     description:"Hace muchas preguntas técnicas. Evalúa tu conocimiento de producto y tu capacidad de explicar con claridad.",
     unlockedByDefault:false,
     focusProducts:["agrofert","bioprotec","hidroplant"],
+    contextTerms:["huerta","tomates","lechuga","suelo","riego","sol","hojas","cultivo","planta","terreno"],
     steps:[
       {
         category:"diagnostico", points:10,
         clientLine:"Buenas, tengo una huerta pequeña y quiero mejorar la producción, pero no sé qué producto usar.",
-        positives:["qué cultiva","qué tipo de suelo","hace cuánto","qué ha usado","tamaño","qué planta","problema","cuál es el problema"],
-        negatives:["le recomiendo","lleve este"],
+        requiredConcepts:["ASK_QUESTION","DIAGNOSTIC_INFO_GATHER"], minSolid:2, requiresDiagnosisFirst:true,
         hints:["¿Qué está cultivando exactamente?","¿Ha notado algún problema puntual (hojas amarillas, poco crecimiento)?"],
         reactions:{
           0:"Pues no sé, plantas variadas.",
@@ -703,8 +975,7 @@ const SCENARIOS = [
       {
         category:"diagnostico", points:10,
         clientLine:"¿Eso qué significa, que les falta algo?",
-        positives:["nutriente","podría ser","le explico","suele pasar cuando","depende","cuánto riega","tipo de tierra","cuánto sol"],
-        negatives:[],
+        requiredConcepts:["HEDGING_HONEST","DIAGNOSTIC_INFO_GATHER"], bonusConcepts:["ASK_QUESTION","COMPARISON_OR_EXPLANATION"], minSolid:2, requiresDiagnosisFirst:true,
         hints:["Explique brevemente que puede indicar falta de nutrientes, sin sonar alarmista.","Pregunte por riego y exposición al sol."],
         reactions:{
           0:"No entendí bien, ¿pero eso es grave?",
@@ -715,8 +986,8 @@ const SCENARIOS = [
       {
         category:"conocimiento_argumentacion", points:15, points2:15,
         clientLine:"¿Cuál es la diferencia entre este fertilizante y uno orgánico?",
-        positives:["npk","balanceada","absorción","nutrición","comparado con","diferencia es","beneficio","gradual","fortalece"],
-        negatives:[],
+        rubricConocimiento:{requiredConcepts:["PRODUCT_BENEFIT_LANGUAGE"], bonusConcepts:["COMPARISON_OR_EXPLANATION"], minSolid:1},
+        rubricArgumentacion:{requiredConcepts:["COMPARISON_OR_EXPLANATION"], bonusConcepts:["VALUE_OVER_PRICE","PRODUCT_BENEFIT_LANGUAGE"], minSolid:1},
         hints:["AgroFert tiene una fórmula NPK balanceada de absorción gradual.","Explique la diferencia sin inventar datos técnicos, con honestidad."],
         reactions:{
           0:"No me quedó muy claro la diferencia, la verdad.",
@@ -727,8 +998,7 @@ const SCENARIOS = [
       {
         category:"objeciones", points:15,
         clientLine:"¿Y si no funciona en mi tipo de suelo? La vez pasada algo no me funcionó.",
-        positives:["entiendo su preocupación","depende del suelo","le recomiendo probar","podemos empezar con poco","garantía","le explico cómo aplicar"],
-        negatives:["le aseguro que sí funciona","obvio que funciona"],
+        requiredConcepts:["EMPATHY_VALIDATION","HEDGING_HONEST"], minSolid:2,
         hints:["Valide su preocupación antes de responder.","Sea honesto: no prometa resultados que no puede garantizar."],
         reactions:{
           0:"Mmm, entonces mejor no arriesgo.",
@@ -739,8 +1009,7 @@ const SCENARIOS = [
       {
         category:"cierre", points:10,
         clientLine:"Listo, ¿necesito algo más junto con esto?",
-        positives:["le puede servir también","complementa","junto con","le ayuda a prevenir","le gustaría llevar"],
-        negatives:["no","nada"],
+        requiredConcepts:["CLOSING_LANGUAGE"], bonusConcepts:["PRODUCT_BENEFIT_LANGUAGE"], minSolid:1,
         hints:["Mencione BioProtec como prevención complementaria.","Cierre invitándolo a contarle cómo le fue."],
         reactions:{
           0:"Ah bueno, entonces solo esto por ahora.",
@@ -761,12 +1030,12 @@ const SCENARIOS = [
     description:"Impaciente y cortante. Evalúa tu autocontrol y tu manejo de comunicación bajo presión.",
     unlockedByDefault:false,
     focusProducts:["industriclean","ecobolsa"],
+    contextTerms:["cocina","restaurante","grasa","parrillas","piso","volumen","talleres"],
     steps:[
       {
-        category:"diagnostico", points:10,
+        category:"diagnostico", points:20,
         clientLine:"Necesito algo para la grasa de mi cocina, rápido, no tengo todo el día.",
-        positives:["con gusto","claro","enseguida","para qué área","cuánta grasa","qué tipo de cocina","cantidad","le ayudo rápido"],
-        negatives:["tranquilícese","cálmese","espere"],
+        requiredConcepts:["ASK_QUESTION","DIAGNOSTIC_INFO_GATHER"], minSolid:2, requiresDiagnosisFirst:true,
         hints:["Responda con calma y agilidad, sin ponerse a la defensiva.","Pregunte lo esencial en una sola frase."],
         reactions:{
           0:"¿Ve? Por eso no me gusta venir aquí, nadie entiende rápido.",
@@ -777,8 +1046,7 @@ const SCENARIOS = [
       {
         category:"objeciones", points:7,
         clientLine:"¿Y esto realmente funciona? La última vez me dieron algo que no sirvió para nada.",
-        positives:["entiendo su molestia","lamento eso","le explico por qué","este es diferente porque","le garantizo la ficha","fue diseñado para"],
-        negatives:["eso no es mi problema","no sé qué le vendieron","obvio que funciona"],
+        requiredConcepts:["EMPATHY_VALIDATION","HEDGING_HONEST"], bonusConcepts:["COMPARISON_OR_EXPLANATION","PRODUCT_BENEFIT_LANGUAGE"], minSolid:2,
         hints:["Reconozca su frustración antes de explicar el producto.","No se ponga a la defensiva ni prometa de más."],
         reactions:{
           0:"Ay, no sé, esto suena igual a lo de la otra vez.",
@@ -789,8 +1057,8 @@ const SCENARIOS = [
       {
         category:"conocimiento_argumentacion", points:15, points2:15,
         clientLine:"Explíqueme rápido por qué este sí serviría.",
-        positives:["alto poder desengrasante","industrial","para volúmenes","cocina industrial","concentrado","talleres","rápida acción"],
-        negatives:[],
+        rubricConocimiento:{requiredConcepts:["PRODUCT_BENEFIT_LANGUAGE"], minSolid:1},
+        rubricArgumentacion:{requiredConcepts:["COMPARISON_OR_EXPLANATION"], bonusConcepts:["PRODUCT_BENEFIT_LANGUAGE"], minSolid:1},
         hints:["IndustriClean está formulado para volúmenes industriales, no doméstico.","Sea directo y concreto, sin rodeos."],
         reactions:{
           0:"No me quedó claro, y no tengo tiempo para adivinar.",
@@ -801,8 +1069,8 @@ const SCENARIOS = [
       {
         category:"objeciones", points:8,
         clientLine:"Está carísimo, en la otra tienda lo consigo más barato.",
-        positives:["entiendo","por el volumen","rinde más","calidad industrial","le explico el valor","comparado con","a largo plazo le sale mejor"],
-        negatives:["le bajo el precio","se lo dejo más barato","no es caro"],
+        requiredConcepts:["VALUE_OVER_PRICE","COMPARISON_OR_EXPLANATION"], bonusConcepts:["PRODUCT_BENEFIT_LANGUAGE"], minSolid:2,
+        negativeConcepts:["DISCOUNT_CAVE"],
         hints:["Explique valor por volumen y rendimiento, no baje el precio de inmediato.","Reconozca su punto sin ceder solo por presión."],
         reactions:{
           0:"Entonces mejor voy a mirar en la otra tienda.",
@@ -813,8 +1081,7 @@ const SCENARIOS = [
       {
         category:"cierre", points:10,
         clientLine:"Bueno, ¿me lo empaca? Y dígame si necesito algo más para el resto de la cocina.",
-        positives:["con gusto","le recomiendo también","le sirve para","le empaco","algo más","le ayuda con"],
-        negatives:["apúrese usted también","ya casi"],
+        requiredConcepts:["CLOSING_LANGUAGE"], bonusConcepts:["PRODUCT_BENEFIT_LANGUAGE"], minSolid:1,
         hints:["Empaque con agilidad y sugiera EcoBolsa para el manejo de residuos.","Cierre de forma breve, respetando su afán."],
         reactions:{
           0:"Bueno, ya me tengo que ir, gracias.",
@@ -929,7 +1196,14 @@ let player = {
   bestScore:null, scoreHistory:[],
   unlocked:{perfecto:true, pregunton:false, grosero:false},
   badges:new Set(),
-  catTotals:{diagnostico:[], escucha:[], conocimiento:[], argumentacion:[], objeciones:[], experiencia:[], cierre:[]}
+  catTotals:{diagnostico:[], escucha:[], conocimiento:[], argumentacion:[], objeciones:[], experiencia:[], cierre:[]},
+  // Seguimiento robusto de finalización: un Set (no un contador) para que
+  // reintentar un escenario no infle el conteo de "escenarios distintos
+  // completados". Esto es lo que habilita el botón del reporte final.
+  completedScenarioIds:new Set(),
+  // Última evaluación completa (puntaje + desglose por competencia) de cada
+  // escenario — es la materia prima real del reporte final, nada inventado.
+  scenarioResults:{}
 };
 let mode = "entrenamiento";
 
@@ -985,6 +1259,8 @@ function renderHome(){
     `;
     grid.appendChild(card);
   });
+
+  renderFinalReportBanner();
 }
 
 function getCompetencyExtremes(){
@@ -1006,6 +1282,7 @@ function getCompetencyExtremes(){
 function goHome(){
   document.getElementById("screen-game").classList.add("hidden");
   document.getElementById("screen-results").classList.add("hidden");
+  document.getElementById("screen-report").classList.add("hidden");
   document.getElementById("screen-home").classList.remove("hidden");
   renderHome();
 }
@@ -1171,30 +1448,41 @@ function handleAdvisorResponse(){
   const step = game.scenario.steps[game.stepIndex];
 
   const tone = toneScore(text);
-  const escuchaPts = tone===0 ? 0 : (tone===1 ? 1.5 : 3);
-  game.categoryScores.escucha += escuchaPts;
+  game.categoryScores.escucha += ESCUCHA_WEIGHT[tone];
   game.escuchaSteps++;
 
-  let mainTier, catKey1, catKey2;
+  // ---------------------------------------------------------------------
+  // Evaluación por criterios (evaluateStep), no por coincidencia literal.
+  // El paso "conocimiento_argumentacion" evalúa DOS rúbricas independientes
+  // sobre el mismo texto (qué tanto conocimiento del producto demuestra y
+  // qué tanto argumenta el valor), y reparte los puntos por separado.
+  // ---------------------------------------------------------------------
+  let mainTier, evalMain=null, evalConocimiento=null, evalArgumentacion=null;
   if(step.category === "conocimiento_argumentacion"){
-    mainTier = keywordTier(text, step.positives, step.negatives);
-    game.categoryScores.conocimiento += (mainTier/2) * step.points;
-    game.categoryScores.argumentacion += (mainTier/2) * step.points2;
+    evalConocimiento = evaluateStep(text, step.rubricConocimiento);
+    evalArgumentacion = evaluateStep(text, step.rubricArgumentacion);
+    game.categoryScores.conocimiento += TIER_WEIGHT[evalConocimiento.tier] * step.points;
+    game.categoryScores.argumentacion += TIER_WEIGHT[evalArgumentacion.tier] * step.points2;
+    mainTier = Math.round((evalConocimiento.tier + evalArgumentacion.tier) / 2);
   } else {
-    mainTier = keywordTier(text, step.positives, step.negatives);
-    game.categoryScores[step.category] += (mainTier/2) * step.points;
+    evalMain = evaluateStep(text, step);
+    mainTier = evalMain.tier;
+    game.categoryScores[step.category] += TIER_WEIGHT[mainTier] * step.points;
   }
 
-  // actualizar métricas del cliente
+  // actualizar métricas del cliente según el NIVEL demostrado (no según
+  // longitud de la respuesta ni coincidencia de frases exactas)
   const m = game.metrics;
-  if(mainTier===0){ m.confianza-=15; m.satisfaccion-=10; }
-  else if(mainTier===1){ m.confianza+=3; m.satisfaccion+=2; }
-  else { m.confianza+=12; m.satisfaccion+=10; }
+  if(mainTier===0){ m.confianza-=14; m.satisfaccion-=10; }
+  else if(mainTier===1){ m.confianza+=8; m.satisfaccion+=6; }   // aceptable: funcional, recupera confianza
+  else { m.confianza+=15; m.satisfaccion+=12; }                  // sólida: mejora clara
 
-  if(tone===0){ m.confianza-=8; m.satisfaccion-=6; }
-  if(step.category.includes("diagnostico")) m.claridad += mainTier===2?18:(mainTier===1?8:2);
-  if(step.category.includes("conocimiento") || step.category==="objeciones") m.probabilidad += mainTier===2?16:(mainTier===1?6:-4);
-  if(step.category==="cierre") m.probabilidad += mainTier===2?20:(mainTier===1?5:-8);
+  if(tone===0){ m.confianza-=6; m.satisfaccion-=4; }
+  else if(tone===2){ m.confianza+=3; m.satisfaccion+=2; }
+
+  if(step.category.includes("diagnostico")) m.claridad += mainTier===2?18:(mainTier===1?10:0);
+  if(step.category.includes("conocimiento") || step.category==="objeciones") m.probabilidad += mainTier===2?16:(mainTier===1?9:-6);
+  if(step.category==="cierre") m.probabilidad += mainTier===2?20:(mainTier===1?9:-6);
   m.confianza = Math.max(0,Math.min(100,m.confianza));
   m.satisfaccion = Math.max(0,Math.min(100,m.satisfaccion));
   m.claridad = Math.max(0,Math.min(100,m.claridad));
@@ -1202,8 +1490,12 @@ function handleAdvisorResponse(){
 
   // feedback pedagógico
   const fbClass = TIER_CLASS[mainTier];
-  const fbText = buildFeedbackText(step, mainTier, tone);
+  const fbText = buildFeedbackText(step, mainTier, tone, evalMain, evalConocimiento, evalArgumentacion);
   addFeedback(fbClass, "Respuesta "+TIER_LABEL[mainTier], fbText);
+
+  // registro de la interacción real (insumo del reporte final: nada se
+  // inventa, todo sale de lo que el asesor efectivamente escribió)
+  game.log.push({stepIndex:game.stepIndex, category:step.category, text:text, tier:mainTier, tone:tone});
 
   // reacción del cliente
   addMsg("client", step.reactions[mainTier]);
@@ -1219,17 +1511,41 @@ function handleAdvisorResponse(){
   }
 }
 
-function buildFeedbackText(step, tier, tone){
-  const catNames = {diagnostico:"diagnóstico de necesidad", conocimiento_argumentacion:"conocimiento y argumentación de valor",
-    objeciones:"manejo de objeciones", cierre:"cierre comercial"};
-  const compTxt = catNames[step.category] || step.category;
-  let base = "";
-  if(tier===2) base = `Buena ${compTxt}: tu respuesta fue concreta y orientada al cliente.`;
-  else if(tier===1) base = `Tu ${compTxt} fue aceptable, pero puede ser más específica. Intenta profundizar un poco más.`;
-  else base = `Esta respuesta no demostró ${compTxt} de forma clara. Revisa la pista sugerida para esta fase.`;
+/* Traduce un resultado de evaluateStep() en una línea de feedback concreta.
+   Para nivel 0 explica la razón real (bandera detectada) en vez de un
+   genérico "está mal", para que el asesor entienda qué corregir. */
+const FLAG_REASONS = {
+  recomienda_sin_diagnosticar:"recomendaste sin indagar antes la necesidad del cliente",
+  empuja_sin_sustento:"la respuesta empuja la compra sin ningún respaldo ni explicación",
+  sin_respuesta:"no se registró contenido suficiente para evaluar la respuesta",
+  OVERPROMISE_RED_FLAG:"la respuesta promete o garantiza un resultado que no se puede asegurar",
+  DISMISSIVE_RED_FLAG:"la respuesta suena despectiva o evade la pregunta del cliente",
+  PUSHY_RED_FLAG:"la respuesta presiona la compra de forma innecesaria",
+  DISCOUNT_CAVE:"se cedió en precio de inmediato en lugar de explicar el valor"
+};
+function competencyFeedback(label, evalResult){
+  if(!evalResult) return "";
+  const cap = label.charAt(0).toUpperCase()+label.slice(1);
+  if(evalResult.tier===2) return `${cap}: sólida — la respuesta demuestra con claridad esta competencia.`;
+  if(evalResult.tier===1) return `${cap}: aceptable — vas por buen camino, aún puedes profundizar un poco más.`;
+  const flag = (evalResult.flags||[])[0];
+  const reason = FLAG_REASONS[flag] || "la respuesta no llegó a demostrar esta competencia con claridad";
+  return `${cap}: débil — ${reason}.`;
+}
+
+function buildFeedbackText(step, tier, tone, evalMain, evalConocimiento, evalArgumentacion){
+  const catNames = {diagnostico:"diagnóstico de necesidad", objeciones:"manejo de objeciones", cierre:"cierre comercial"};
+
+  let base;
+  if(step.category === "conocimiento_argumentacion"){
+    base = competencyFeedback("conocimiento de producto", evalConocimiento) + " " +
+           competencyFeedback("argumentación de valor", evalArgumentacion);
+  } else {
+    base = competencyFeedback(catNames[step.category] || step.category, evalMain);
+  }
 
   let toneTxt = "";
-  if(tone===0) toneTxt = " Además, el tono percibido fue cortante, lo que puede afectar la confianza del cliente.";
+  if(tone===0) toneTxt = " Además, el tono percibido fue cortante o despectivo, lo que afecta la confianza del cliente.";
   else if(tone===2) toneTxt = " El tono fue cordial, lo cual suma a la confianza.";
 
   return base + toneTxt;
@@ -1265,12 +1581,39 @@ function finishScenario(){
   player.bestByScenario = player.bestByScenario || {};
   player.bestByScenario[game.scenario.id] = Math.max(player.bestByScenario[game.scenario.id]||0, total);
 
-  if(total>=60){
-    const idx = SCENARIOS.findIndex(s=>s.id===game.scenario.id);
-    if(idx>=0 && idx+1<SCENARIOS.length){
-      player.unlocked[SCENARIOS[idx+1].id] = true;
-    }
+  // ---------------------------------------------------------------------
+  // PROGRESIÓN: el siguiente escenario se desbloquea por HABER COMPLETADO
+  // el actual (haber terminado todos sus pasos), sin importar la
+  // puntuación obtenida. La puntuación se sigue usando para medir
+  // desempeño, mostrar fortalezas/oportunidades, nivel, badges e historial
+  // — pero nunca para bloquear el avance.
+  // ---------------------------------------------------------------------
+  const idxActual = SCENARIOS.findIndex(s=>s.id===game.scenario.id);
+  if(idxActual>=0 && idxActual+1<SCENARIOS.length){
+    player.unlocked[SCENARIOS[idxActual+1].id] = true;
   }
+
+  // ---------------------------------------------------------------------
+  // REPORTE FINAL: se registra como "completado" el escenario distinto
+  // (Set, no contador — reintentar no lo infla) y se guarda el desglose
+  // completo de ESTA finalización para construir el reporte más adelante,
+  // usando únicamente datos reales de la partida.
+  // ---------------------------------------------------------------------
+  player.completedScenarioIds.add(game.scenario.id);
+
+  const personalizedTurns = game.log.filter(l=>usesClientContext(l.text, game.scenario)).length;
+  const personalizationPct = game.log.length ? Math.round((personalizedTurns/game.log.length)*100) : 0;
+
+  player.scenarioResults[game.scenario.id] = {
+    id: game.scenario.id,
+    title: game.scenario.title,
+    icon: game.scenario.icon,
+    total, final, maxes,
+    tier: perfTier(total).label,
+    approved: total>=60,
+    personalizationPct,
+    timestamp: new Date().toISOString()
+  };
 
   const newBadges = [];
   BADGES.forEach(b=>{
@@ -1287,10 +1630,10 @@ function finishScenario(){
     const tier = perfTier(total);
     participantData.fechaFinalizacion = now.toISOString();
     participantData.tiempoTotal = formatDuration(now - participant.fechaInicio);
-    participantData.escenariosCompletados = player.completed;
+    participantData.escenariosCompletados = player.completedScenarioIds.size;
     participantData.puntuacionFinal = total;
     participantData.nivel = tier.label;
-    participantData.estado = player.completed >= SCENARIOS.length ? "Finalizado" : "Incompleto";
+    participantData.estado = player.completedScenarioIds.size >= SCENARIOS.length ? "Finalizado" : "Incompleto";
     participantData.competencias = {
       diagnosticoNecesidades: final.diagnostico,
       comunicacion: final.escucha,
@@ -1300,17 +1643,6 @@ function finishScenario(){
       cierre: final.cierre,
       experienciaCliente: final.experiencia
     };
-    fetch("https://script.google.com/macros/s/AKfycbwtEEvWdyhUR37RYrl7s-Q-CXrjWvwWBGgC5Xd3tFIyp9T0vPG0CtfR0vHzuw1-7pyt/exec", {
-  method: "POST",
-  body: JSON.stringify(participantData)
-})
-.then(response => response.json())
-.then(data => {
-  console.log("Registro enviado:", data);
-})
-.catch(error => {
-  console.error("Error al enviar el registro:", error);
-});
   }
 
   renderResults(total, final, maxes, newBadges);
@@ -1335,6 +1667,14 @@ function renderResults(total, final, maxes, newBadges){
   tagEl.textContent = tier.label;
   tagEl.style.background = tier.color;
   tagEl.style.color = "#fff";
+
+  // "Completado" = terminó todos los pasos del escenario (siempre, si llegamos aquí).
+  // "Aprobado" / "En desarrollo" = únicamente indicador de desempeño (umbral 60/100),
+  // no condiciona el avance al siguiente escenario.
+  const approved = total>=60;
+  const statusEl = document.getElementById("res-status");
+  statusEl.textContent = "✓ Completado · " + (approved ? "Aprobado" : "En desarrollo");
+  statusEl.className = "status-pill " + (approved ? "approved" : "developing");
 
   const catNames = {diagnostico:"Diagnóstico de necesidad", escucha:"Escucha y comunicación", conocimiento:"Conocimiento de producto",
     argumentacion:"Argumentación de valor", objeciones:"Manejo de objeciones", experiencia:"Experiencia del cliente", cierre:"Cierre comercial"};
@@ -1378,10 +1718,19 @@ function renderResults(total, final, maxes, newBadges){
     nextBtn.disabled = false;
     nextBtn.onclick = ()=>startScenario(next.id);
   } else if(next){
-    nextBtn.textContent = "Supera 60/100 para desbloquear el siguiente";
+    // No debería ocurrir (el escenario siguiente se desbloquea siempre al
+    // completar el actual), se deja como salvaguarda.
+    nextBtn.textContent = "Completa este escenario para continuar";
     nextBtn.disabled = true;
+  } else if(player.completedScenarioIds.size >= SCENARIOS.length){
+    // Ya no hay siguiente escenario Y los 3 están realmente completados:
+    // el botón se activa y lleva al reporte final (antes quedaba
+    // deshabilitado sin ninguna acción posible).
+    nextBtn.textContent = "Ver mi evaluación final →";
+    nextBtn.disabled = false;
+    nextBtn.onclick = ()=>showFinalReport();
   } else {
-    nextBtn.textContent = "Has completado todos los escenarios";
+    nextBtn.textContent = "Completa los escenarios restantes";
     nextBtn.disabled = true;
   }
 }
@@ -1426,6 +1775,270 @@ function buildRecommendation(final, maxes){
     cierre:"Practica frases de cierre que ofrezcan opciones sin presionar, como venta complementaria natural."
   };
   return recos[lowestKey] || "Buen desempeño general. Sigue practicando escenarios de mayor dificultad.";
+}
+
+/* =========================================================================
+   REPORTE FINAL DE EVALUACIÓN
+   Todo lo que se muestra aquí se calcula a partir de player.scenarioResults
+   (el desglose real guardado por finishScenario() para cada uno de los 3
+   escenarios) y de game.log (las interacciones reales del asesor). Nada de
+   esto es aleatorio ni inventado: son transformaciones deterministas de los
+   mismos números que ya usa la pantalla de resultados por escenario.
+========================================================================= */
+
+// Qué competencias son prioritarias para cada tipo de cliente (usado para
+// "Adaptación al tipo de cliente" y coherente con cómo están diseñadas las
+// rúbricas de cada escenario).
+const SCENARIO_PRIORITY_CATS = {
+  perfecto: ["diagnostico","conocimiento","cierre"],
+  pregunton: ["diagnostico","escucha","argumentacion"],
+  grosero: ["escucha","objeciones","cierre"]
+};
+
+function reportTier(score){
+  if(score>=90) return {label:"Excelente desempeño", color:"var(--good)"};
+  if(score>=80) return {label:"Buen desempeño", color:"var(--good)"};
+  if(score>=70) return {label:"Desempeño en desarrollo", color:"var(--amber-dark)"};
+  return {label:"Requiere fortalecimiento", color:"var(--bad)"};
+}
+
+function scrollToReportSection(id){
+  const el = document.getElementById(id);
+  if(el) el.scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+// Promedio (%) de cada una de las 7 competencias base, entre los escenarios
+// que el jugador ya completó.
+function aggregatePctByCategory(){
+  const keys = ["diagnostico","escucha","conocimiento","argumentacion","objeciones","experiencia","cierre"];
+  const pct = {};
+  keys.forEach(k=>{
+    const vals = SCENARIOS.map(sc=>player.scenarioResults[sc.id]).filter(Boolean)
+      .map(r=>(r.final[k]/r.maxes[k])*100);
+    pct[k] = vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : 0;
+  });
+  return pct;
+}
+
+function computeAdaptacion(){
+  const scores = SCENARIOS.map(sc=>{
+    const r = player.scenarioResults[sc.id];
+    if(!r) return null;
+    const cats = SCENARIO_PRIORITY_CATS[sc.id];
+    return cats.reduce((sum,k)=>sum+(r.final[k]/r.maxes[k])*100, 0) / cats.length;
+  }).filter(v=>v!==null);
+  return scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
+}
+
+// Los 10 indicadores pedidos. Varios se derivan combinando las mismas
+// competencias base (p.ej. "venta complementaria" mezcla cierre+conocimiento)
+// en vez de inventar una señal nueva sin respaldo en los datos reales.
+function buildIndicators(pct, adaptacion){
+  return [
+    {label:"Detección de necesidades", value:pct.diagnostico},
+    {label:"Escucha activa", value:pct.escucha},
+    {label:"Calidad de las preguntas", value:Math.round((pct.diagnostico+pct.escucha)/2)},
+    {label:"Personalización de la recomendación", value:pct.conocimiento},
+    {label:"Argumentación de valor", value:pct.argumentacion},
+    {label:"Manejo de objeciones", value:pct.objeciones},
+    {label:"Venta complementaria", value:Math.round(pct.cierre*0.7 + pct.conocimiento*0.3)},
+    {label:"Capacidad de cierre", value:pct.cierre},
+    {label:"Adaptación al tipo de cliente", value:adaptacion},
+    {label:"Profesionalismo y tono de comunicación", value:Math.round(pct.escucha*0.6 + pct.experiencia*0.4)}
+  ];
+}
+
+function buildScenarioBreakdown(){
+  return SCENARIOS.map(sc=>{
+    const r = player.scenarioResults[sc.id];
+    return r ? {id:sc.id, title:sc.title, icon:sc.icon, total:r.total, tier:r.tier, approved:r.approved} : null;
+  }).filter(Boolean);
+}
+
+// Reutiliza strengthLine()/oppLine() (ya definidas para la pantalla de
+// resultados por escenario) sobre el promedio agregado de los 3 escenarios,
+// y agrega 2 señales reales adicionales: personalización y tono bajo presión.
+function buildAggregateFeedback(pct){
+  const order = ["diagnostico","escucha","conocimiento","argumentacion","objeciones","experiencia","cierre"];
+  const strengths = [], opps = [];
+  order.forEach(k=>{
+    const p = pct[k]/100;
+    if(p>=0.75 && strengths.length<5) strengths.push(strengthLine(k));
+    else if(p<0.55 && opps.length<5) opps.push(oppLine(k));
+  });
+
+  const results = Object.values(player.scenarioResults);
+  const personalizedCount = results.filter(r=>r.personalizationPct>=40).length;
+  if(personalizedCount>=2 && strengths.length<5){
+    strengths.push("Personaliza las recomendaciones utilizando información que el propio cliente entregó durante la conversación.");
+  } else if(personalizedCount<=1 && opps.length<5){
+    opps.push("Conectar más las recomendaciones con los detalles específicos que menciona cada cliente, en vez de respuestas genéricas de plantilla.");
+  }
+
+  const gr = player.scenarioResults["grosero"];
+  if(gr){
+    const escGr = gr.final.escucha/gr.maxes.escucha;
+    if(escGr>=0.75 && strengths.length<5) strengths.push("Mantiene una comunicación profesional incluso ante clientes exigentes o impacientes.");
+    else if(escGr<0.5 && opps.length<5) opps.push("Cuidar el tono de las respuestas cuando el cliente se muestra impaciente o desconfiado.");
+  }
+
+  if(strengths.length===0) strengths.push("Completó los tres escenarios demostrando un manejo funcional de la conversación comercial.");
+  if(opps.length===0) opps.push("Desempeño parejo entre competencias; sigue practicando escenarios de mayor exigencia para seguir creciendo.");
+  return {strengths:strengths.slice(0,5), opps:opps.slice(0,5)};
+}
+
+function buildQualitativeAnalysis(pct, scenarios, adaptacion){
+  const parts = [];
+  parts.push(pct.diagnostico>=70
+    ? `Aborda al cliente indagando su necesidad antes de recomendar, con un ${pct.diagnostico}% en detección de necesidades.`
+    : `Tiende a avanzar hacia la recomendación sin indagar lo suficiente antes; su detección de necesidades quedó en ${pct.diagnostico}%.`);
+  parts.push(pct.conocimiento>=70
+    ? `Sus recomendaciones de producto se apoyan en conocimiento real del catálogo (${pct.conocimiento}% en personalización/recomendación).`
+    : `Las recomendaciones de producto podrían apoyarse más en la ficha técnica y en lo que el cliente ya contó (${pct.conocimiento}%).`);
+  parts.push(pct.objeciones>=70
+    ? `Ante dudas u objeciones, valida la preocupación del cliente y explica el valor antes de ceder (${pct.objeciones}% en manejo de objeciones).`
+    : `Frente a objeciones, aún puede reforzar la validación de la preocupación del cliente antes de responder (${pct.objeciones}% en manejo de objeciones).`);
+  const gr = scenarios.find(s=>s.id==="grosero");
+  if(gr){
+    parts.push(gr.total>=60
+      ? `Frente al cliente más exigente del simulador logró mantener el foco comercial, con ${gr.total}/100.`
+      : `Frente al cliente más exigente del simulador el resultado (${gr.total}/100) sugiere que aún cuesta sostener el profesionalismo bajo presión.`);
+  }
+  parts.push(pct.cierre>=70
+    ? `Cierra las interacciones con naturalidad y aprovecha oportunidades de venta complementaria (${pct.cierre}%).`
+    : `El cierre comercial y la venta complementaria son un punto claro a fortalecer (${pct.cierre}%).`);
+  parts.push(`En conjunto, su adaptación a los distintos tipos de cliente se ubica en ${adaptacion}%.`);
+  return parts.join(" ");
+}
+
+// Determinístico a partir de comparaciones reales entre competencias — no
+// hay ningún elemento aleatorio en la elección del perfil.
+function buildCommercialProfile(pct, overallTotal){
+  if(overallTotal<60){
+    return {name:"Asesor en desarrollo", desc:"Todavía está construyendo las bases de la conversación comercial. Reforzar el diagnóstico y el manejo de objeciones debería elevar el desempeño general con claridad."};
+  }
+  const values = [pct.diagnostico,pct.escucha,pct.conocimiento,pct.argumentacion,pct.objeciones,pct.cierre];
+  const minVal = Math.min(...values);
+  if(pct.objeciones===minVal && pct.objeciones<60){
+    return {name:"Asesor con oportunidad en manejo de objeciones", desc:`Sus otras competencias comerciales son sólidas, pero el manejo de objeciones (${pct.objeciones}%) es hoy el área con mayor margen de mejora.`};
+  }
+  const candidates = [
+    {name:"Asesor orientado al cierre", score:pct.cierre, desc:"Muestra fortaleza particular llevando la conversación hacia un cierre natural y aprovechando oportunidades de venta complementaria."},
+    {name:"Asesor consultivo", score:(pct.diagnostico+pct.escucha)/2, desc:"Prioriza entender la necesidad real del cliente antes de recomendar, apoyado en escucha activa y buenas preguntas de diagnóstico."},
+    {name:"Asesor enfocado en producto", score:pct.conocimiento, desc:"Se apoya con solidez en el conocimiento del catálogo para justificar y personalizar sus recomendaciones."},
+    {name:"Asesor con fortaleza en relacionamiento", score:(pct.escucha+pct.experiencia)/2, desc:"Genera confianza y sostiene una buena experiencia de cliente incluso en interacciones difíciles."}
+  ];
+  candidates.sort((a,b)=>b.score-a.score);
+  return {name:candidates[0].name, desc:candidates[0].desc};
+}
+
+// Ordena las 6 competencias de menor a mayor % real y arma las 3
+// recomendaciones (Alta / Media / Fortaleza a consolidar) a partir de eso.
+function buildTrainingRecommendations(pct){
+  const entries = [
+    {key:"diagnostico", label:"Diagnóstico de necesidades"},
+    {key:"escucha", label:"Escucha y comunicación"},
+    {key:"conocimiento", label:"Conocimiento de producto"},
+    {key:"argumentacion", label:"Argumentación de valor"},
+    {key:"objeciones", label:"Manejo de objeciones"},
+    {key:"cierre", label:"Técnicas de cierre comercial"}
+  ].map(e=>({...e, value:pct[e.key]})).sort((a,b)=>a.value-b.value);
+
+  const recos = [];
+  if(entries[0].value<70) recos.push({priority:"ALTA", label:entries[0].label, detail:`Resultado actual: ${entries[0].value}%. Es la competencia con mayor oportunidad de mejora en tus 3 escenarios.`});
+  if(entries[1].value<75) recos.push({priority:"MEDIA", label:entries[1].label, detail:`Resultado actual: ${entries[1].value}%. Reforzarla elevaría el desempeño general de forma notoria.`});
+  const strongest = entries[entries.length-1];
+  recos.push({priority:"FORTALEZA", label:strongest.label, detail:`Resultado actual: ${strongest.value}%. Consolídala y úsala como referencia para las demás competencias.`});
+  return recos;
+}
+
+function renderFinalReportBanner(){
+  const el = document.getElementById("final-report-banner");
+  if(!el) return;
+  const done = player.completedScenarioIds.size;
+  const total = SCENARIOS.length;
+  if(done>=total){
+    el.innerHTML = `
+      <div class="hero" style="padding:20px 26px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+        <div>
+          <div class="hero-eyebrow">Evaluación disponible</div>
+          <h3 style="color:#fff; font-size:16.5px; margin-top:4px;">Completaste los 3 escenarios — tu evaluación comercial ya está lista.</h3>
+        </div>
+        <button class="btn btn-primary" onclick="showFinalReport()">Ver mi evaluación final →</button>
+      </div>`;
+  } else {
+    el.innerHTML = `
+      <div class="dash-card" style="margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;">
+        <div>
+          <div class="k">Evaluación final</div>
+          <div class="v small">Se desbloquea al completar los 3 escenarios (${done}/${total} completados)</div>
+        </div>
+        <button class="btn btn-ghost" disabled>Ver mi evaluación final</button>
+      </div>`;
+  }
+}
+
+function showFinalReport(){
+  if(player.completedScenarioIds.size < SCENARIOS.length) return;
+  document.getElementById("screen-home").classList.add("hidden");
+  document.getElementById("screen-game").classList.add("hidden");
+  document.getElementById("screen-results").classList.add("hidden");
+  document.getElementById("screen-report").classList.remove("hidden");
+  renderFinalReport();
+  window.scrollTo({top:0, behavior:"instant"});
+}
+
+function renderFinalReport(){
+  const scenarioList = buildScenarioBreakdown();
+  if(!scenarioList.length) return;
+  const overallTotal = Math.round(scenarioList.reduce((a,r)=>a+r.total,0)/scenarioList.length);
+  const pct = aggregatePctByCategory();
+  const adaptacion = computeAdaptacion();
+
+  const participantWrap = document.getElementById("report-participant-wrap");
+  document.getElementById("report-participant").textContent = participant ? participant.nombre : "";
+  if(participantWrap) participantWrap.style.display = participant ? "inline" : "none";
+
+  document.getElementById("report-score").textContent = overallTotal;
+  const tier = reportTier(overallTotal);
+  const tierEl = document.getElementById("report-tier");
+  tierEl.textContent = tier.label;
+  tierEl.style.background = tier.color;
+  tierEl.style.color = "#fff";
+  document.getElementById("report-interpretation").textContent =
+    `${overallTotal}/100 — ${tier.label}, calculado sobre el promedio de tus 3 escenarios completados.`;
+
+  const indicators = buildIndicators(pct, adaptacion);
+  document.getElementById("report-indicators").innerHTML = indicators.map(ind=>`
+    <div class="cat-row">
+      <div class="cname">${ind.label}</div>
+      <div class="ctrack"><div class="cfill" style="width:${ind.value}%; background:${ind.value<50?'var(--bad)':ind.value<75?'var(--amber)':'var(--good)'};"></div></div>
+      <div class="cval">${ind.value}%</div>
+    </div>`).join("");
+
+  document.getElementById("report-scenario-cards").innerHTML = scenarioList.map(r=>`
+    <div class="scenario-score-card">
+      <div class="ssc-title">${r.icon} ${r.title}</div>
+      <div class="ssc-score">${r.total}<span style="font-size:13px; color:var(--neutral);">/100</span></div>
+      <div class="status-pill ${r.approved?'approved':'developing'}" style="margin-top:8px; margin-left:0;">${r.tier}</div>
+    </div>`).join("");
+
+  const fb = buildAggregateFeedback(pct);
+  document.getElementById("report-strengths").innerHTML = fb.strengths.map(s=>`<li>${s}</li>`).join("");
+  document.getElementById("report-opps").innerHTML = fb.opps.map(s=>`<li>${s}</li>`).join("");
+
+  document.getElementById("report-analysis").textContent = buildQualitativeAnalysis(pct, scenarioList, adaptacion);
+
+  const profile = buildCommercialProfile(pct, overallTotal);
+  document.getElementById("report-profile-name").textContent = profile.name;
+  document.getElementById("report-profile-desc").textContent = profile.desc;
+
+  const trainings = buildTrainingRecommendations(pct);
+  document.getElementById("report-training").innerHTML = trainings.map(t=>`
+    <div class="training-row">
+      <span class="priority-tag ${t.priority==='ALTA'?'alta':t.priority==='MEDIA'?'media':'fortaleza'}">${t.priority==='FORTALEZA'?'Fortaleza a consolidar':'Prioridad '+t.priority.toLowerCase()}</span>
+      <div><strong style="font-size:13px;">${t.label}</strong><div style="font-size:12.5px; color:var(--neutral); margin-top:2px;">${t.detail}</div></div>
+    </div>`).join("");
 }
 
 /* =========================================================================
