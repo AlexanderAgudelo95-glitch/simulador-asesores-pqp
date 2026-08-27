@@ -582,7 +582,7 @@ textarea#advisor-input:focus{outline:2px solid var(--amber); border-color:transp
 
 </div>
 
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
 /* =========================================================================
    DATA — CATÁLOGO DE PRODUCTOS (ficticio, comercial, seguro)
@@ -2274,6 +2274,172 @@ function renderFinalReport(){
     </div>`).join("");
 }
 
+  async function generarYEnviarPDF() {
+
+  try {
+
+    const reporte = document.getElementById("screen-report");
+
+    if (!reporte) {
+      console.error("No se encontró el reporte final.");
+      return;
+    }
+
+    // Crear una copia del reporte
+    const clon = reporte.cloneNode(true);
+
+    clon.classList.remove("hidden");
+
+    clon.style.display = "block";
+    clon.style.position = "absolute";
+    clon.style.left = "-99999px";
+    clon.style.top = "0";
+    clon.style.width = "900px";
+    clon.style.background = "#ffffff";
+
+    // Quitar elementos que no deben aparecer en el PDF
+    const elementosExcluir = clon.querySelectorAll(
+      ".result-actions, .report-nav"
+    );
+
+    elementosExcluir.forEach(elemento => {
+      elemento.remove();
+    });
+
+    document.body.appendChild(clon);
+
+    // Fecha
+    const fecha = participantData.fechaFinalizacion
+      ? new Date(participantData.fechaFinalizacion)
+      : new Date();
+
+    const dd = String(fecha.getDate()).padStart(2, "0");
+    const mm = String(fecha.getMonth() + 1).padStart(2, "0");
+    const yyyy = fecha.getFullYear();
+
+    // Nombre
+    const nombre = (participantData.nombre || "Participante")
+      .replace(/[\\\/:*?"<>|]/g, "")
+      .trim();
+
+    // Nombre del archivo
+    const nombreArchivo =
+      `${dd}-${mm}-${yyyy}_${nombre}.pdf`;
+
+    // Configuración PDF
+    const opciones = {
+
+      margin: [8, 8, 8, 8],
+
+      filename: nombreArchivo,
+
+      image: {
+        type: "jpeg",
+        quality: 0.95
+      },
+
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false
+      },
+
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait"
+      },
+
+      pagebreak: {
+        mode: ["css", "legacy"]
+      }
+    };
+
+    // Generar PDF como Blob
+    const pdfBlob = await html2pdf()
+      .set(opciones)
+      .from(clon)
+      .outputPdf("blob");
+
+    // Convertir a Base64
+    const base64 = await convertirBlobABase64(pdfBlob);
+
+    // Datos que enviaremos a Apps Script
+    const datosPDF = {
+
+      participantId: participantData.participantId,
+      nombre: participantData.nombre,
+      correo: participantData.correo,
+      cargo: participantData.cargo,
+      area: participantData.area,
+
+      fechaInicio: participantData.fechaInicio,
+      fechaFinalizacion: participantData.fechaFinalizacion,
+      tiempoTotal: participantData.tiempoTotal,
+      escenariosCompletados: participantData.escenariosCompletados,
+
+      puntuacionFinal: participantData.puntuacionFinal,
+      nivel: participantData.nivel,
+      estado: participantData.estado,
+
+      pdfBase64: base64
+    };
+
+    // Enviar a Apps Script
+    await fetch(
+      "https://script.google.com/macros/s/AKfycbwtEEvWdyhUR37RYrl7s-Q-CXrjWvwWBGgC5Xd3tFIyp9T0vPG0CtfR0vHzuw1-7pyt/exec",
+      {
+        method: "POST",
+        mode: "no-cors",
+
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+
+        body: JSON.stringify(datosPDF)
+      }
+    );
+
+    console.log(
+      "Informe PDF enviado correctamente."
+    );
+
+    // Eliminar copia temporal
+    clon.remove();
+
+  } catch (error) {
+
+    console.error(
+      "Error generando o enviando el PDF:",
+      error
+    );
+
+  }
+}
+
+
+// Convertir Blob a Base64
+function convertirBlobABase64(blob) {
+
+  return new Promise((resolve, reject) => {
+
+    const reader = new FileReader();
+
+    reader.onloadend = function () {
+
+      const resultado = reader.result;
+
+      const base64 = resultado.split(",")[1];
+
+      resolve(base64);
+    };
+
+    reader.onerror = reject;
+
+    reader.readAsDataURL(blob);
+  });
+}
 /* =========================================================================
    INIT
 ========================================================================= */
