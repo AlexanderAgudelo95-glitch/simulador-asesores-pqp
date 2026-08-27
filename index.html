@@ -802,51 +802,241 @@ function toneScore(rawText){
 function evaluateStep(rawText, rubric){
   const hasQ = /\?/.test(rawText);
   const norm = normalizeText(rawText);
-  if(norm.length===0) return {tier:0, flags:["sin_respuesta"], matched:[]};
+
+  if(norm.length === 0){
+    return {
+      tier: 0,
+      flags: ["sin_respuesta"],
+      matched: []
+    };
+  }
 
   const present = detectConcepts(rawText, norm, hasQ);
 
-  // Fallas duras universales: promesas irresponsables, trato despectivo,
-  // presión de cierre agresiva. Estas invalidan la respuesta sin importar
-  // qué más se haya dicho.
+  /*
+   * ================================================================
+   * EVIDENCIA COMERCIAL NATURAL
+   * Busca comportamientos comerciales y no únicamente frases exactas.
+   * ================================================================
+   */
+
+  // Preguntas naturales de diagnóstico.
+  const naturalQuestion =
+    hasQ ||
+    /\b(dime|cuentame|comentame|explicame|cuenteme|digame|decime)\b/.test(norm) ||
+    /\b(que|como|cual|donde|cuando|cuanto|para que|por que)\b/.test(norm);
+
+  const naturalDiagnosis =
+    naturalQuestion &&
+    /\b(usar|uso|necesita|busca|buscando|limpia|limpiar|problema|superficie|frecuencia|cantidad|tipo|producto|cultivo|suelo|cocina|grasa|planta|riego|sol|preferencia)\b/.test(norm);
+
+  if(naturalDiagnosis){
+    present.add("ASK_QUESTION");
+    present.add("DIAGNOSTIC_INFO_GATHER");
+  }
+
+  /*
+   * Conocimiento de producto y beneficios.
+   * Reconoce características expresadas de manera natural.
+   */
+  const productEvidence =
+    /\b(concentrad|formulad|diseñad|pensad|presentacion|litros|litro|rinde|rendimiento|poder|absorcion|balancead|nutricion|nutrientes|volumen|frecuente|exigente|industrial|limpieza|cultivo|superficie)\b/.test(norm);
+
+  if(productEvidence){
+    present.add("PRODUCT_BENEFIT_LANGUAGE");
+  }
+
+  /*
+   * Explicación natural.
+   * No obliga al asesor a usar expresiones como "la diferencia es".
+   */
+  const naturalExplanation =
+    /\b(porque|por que|ya que|debido a|por eso|por lo tanto|entonces|asi que|de ahi|la ventaja|la diferencia|se debe|significa|quiere decir|esto hace|esto permite|eso hace|eso permite)\b/.test(norm);
+
+  if(naturalExplanation){
+    present.add("COMPARISON_OR_EXPLANATION");
+  }
+
+  /*
+   * Defensa de valor frente al precio.
+   */
+  const mentionsPrice =
+    /\b(precio|caro|cara|barato|barata|costo|cuesta|cuestan|plata|dinero|invertir|inversion)\b/.test(norm);
+
+  const valueEvidence =
+    /\b(rinde|rendimiento|litros|litro|volumen|dura|duracion|uso|usos|cantidad|conveniente|conviene|economico|economica|ahorra|ahorro|calidad|beneficio|presentacion|frecuente|largo plazo|por uso)\b/.test(norm);
+
+  if(mentionsPrice && valueEvidence){
+    present.add("VALUE_OVER_PRICE");
+  }
+
+  /*
+   * Reconocimiento de la objeción y respuesta honesta.
+   */
+  const objectionRecognition =
+    /\b(entiendo|comprendo|claro|tiene razon|es valido|es razonable|entiendo la preocupacion|entiendo la duda|entiendo que)\b/.test(norm);
+
+  const honestResponse =
+    /\b(depende|puede|podria|podría|varia|varía|no puedo garantizar|no le puedo garantizar|no siempre|cada caso|habria que|habría que|revisar|revisamos|probar|confirmar)\b/.test(norm);
+
+  if(objectionRecognition){
+    present.add("EMPATHY_VALIDATION");
+  }
+
+  if(honestResponse){
+    present.add("HEDGING_HONEST");
+  }
+
+  /*
+   * Cierre natural.
+   */
+  const naturalClosing =
+    /\b(empaco|empacamos|preparo|preparamos|llevar|llevo|llevarlo|llevarselo|incluyo|agrego|acompaño|acompanio|complemento|adicional|tambien|también|algo mas|algo más|necesita algo|desea algo)\b/.test(norm);
+
+  if(naturalClosing){
+    present.add("CLOSING_LANGUAGE");
+  }
+
+  /*
+   * ================================================================
+   * FALLAS REALMENTE GRAVES
+   * Estas sí deben mantenerse estrictas.
+   * ================================================================
+   */
   const hardHits = [...HARD_FAIL_CONCEPTS].filter(k=>present.has(k));
-  if(hardHits.length>0) return {tier:0, flags:hardHits, matched:[...present]};
 
-  // Empuje sin sustento: respuestas breves tipo "llévelo"/"cómprelo" sin
-  // ningún respaldo de diagnóstico, conocimiento, empatía o explicación.
+  if(hardHits.length > 0){
+    return {
+      tier: 0,
+      flags: hardHits,
+      matched: [...present]
+    };
+  }
+
+  /*
+   * Recomendar un producto sin diagnosticar.
+   * Solo se penaliza cuando la rúbrica exige diagnóstico previo.
+   */
+  if(
+    rubric.requiresDiagnosisFirst &&
+    present.has("RECOMMEND_PRODUCT_NAME") &&
+    !present.has("ASK_QUESTION") &&
+    !present.has("DIAGNOSTIC_INFO_GATHER")
+  ){
+    return {
+      tier: 0,
+      flags: ["recomienda_sin_diagnosticar"],
+      matched: [...present]
+    };
+  }
+
+  /*
+   * Empuje comercial sin sustento.
+   * Solo penalizamos respuestas realmente pobres y muy breves.
+   */
   const wc = norm.split(" ").filter(Boolean).length;
-  const pushStems = ["llev","compr"];
+  const pushStems = ["llev", "compr"];
   const hasPushStem = pushStems.some(s=>norm.includes(s));
-  const hasSubstance = present.has("DIAGNOSTIC_INFO_GATHER") || present.has("PRODUCT_BENEFIT_LANGUAGE") ||
-    present.has("EMPATHY_VALIDATION") || present.has("HEDGING_HONEST") || present.has("COMPARISON_OR_EXPLANATION") ||
-    present.has("VALUE_OVER_PRICE") || present.has("CLOSING_LANGUAGE");
-  if(hasPushStem && wc<=6 && !hasSubstance){
-    return {tier:0, flags:["empuja_sin_sustento"], matched:[...present]};
+
+  const hasSubstance =
+    present.has("DIAGNOSTIC_INFO_GATHER") ||
+    present.has("PRODUCT_BENEFIT_LANGUAGE") ||
+    present.has("EMPATHY_VALIDATION") ||
+    present.has("HEDGING_HONEST") ||
+    present.has("COMPARISON_OR_EXPLANATION") ||
+    present.has("VALUE_OVER_PRICE") ||
+    present.has("CLOSING_LANGUAGE");
+
+  if(hasPushStem && wc <= 6 && !hasSubstance){
+    return {
+      tier: 0,
+      flags: ["empuja_sin_sustento"],
+      matched: [...present]
+    };
   }
 
-  // Recomienda sin diagnosticar (solo aplica en fases de diagnóstico).
-  if(rubric.requiresDiagnosisFirst && present.has("RECOMMEND_PRODUCT_NAME") &&
-     !present.has("ASK_QUESTION") && !present.has("DIAGNOSTIC_INFO_GATHER")){
-    return {tier:0, flags:["recomienda_sin_diagnosticar"], matched:[...present]};
-  }
+  /*
+   * ================================================================
+   * EVALUACIÓN FLEXIBLE
+   * ================================================================
+   */
+  const softNeg = (rubric.negativeConcepts || [])
+    .filter(k=>present.has(k));
 
-  const softNeg = (rubric.negativeConcepts||[]).filter(k=>present.has(k));
-  const req = rubric.requiredConcepts||[];
-  const bonus = rubric.bonusConcepts||[];
+  const req = rubric.requiredConcepts || [];
+  const bonus = rubric.bonusConcepts || [];
+
   const reqHits = req.filter(k=>present.has(k));
   const bonusHits = bonus.filter(k=>present.has(k));
-  const totalGood = reqHits.length + bonusHits.length;
-  const minSolid = rubric.minSolid!=null ? rubric.minSolid : 2;
 
-  let tier;
-  if(reqHits.length>0 && totalGood>=minSolid && softNeg.length===0){
-    tier = 2;
-  } else if(reqHits.length>0 || totalGood>=1){
-    tier = 1;
-  } else {
-    tier = 0;
+  const totalGood = reqHits.length + bonusHits.length;
+
+  let tier = 0;
+
+  /*
+   * Si la rúbrica no tiene requerimientos definidos,
+   * evaluamos la evidencia general.
+   */
+  if(req.length === 0){
+
+    if(totalGood >= 2 && softNeg.length === 0){
+      tier = 2;
+    } 
+    else if(totalGood >= 1){
+      tier = 1;
+    } 
+    else{
+      tier = 0;
+    }
+
   }
-  return {tier, flags:softNeg, matched:[...present]};
+  else{
+
+    /*
+     * Sólida:
+     * - Cumple todos los requerimientos, o
+     * - cumple al menos un requerimiento y demuestra evidencia adicional.
+     */
+    if(
+      softNeg.length === 0 &&
+      reqHits.length === req.length
+    ){
+      tier = 2;
+    }
+    else if(
+      softNeg.length === 0 &&
+      reqHits.length > 0 &&
+      totalGood >= 2
+    ){
+      tier = 2;
+    }
+
+    /*
+     * Aceptable:
+     * existe evidencia de la competencia, pero no suficiente
+     * para considerarla completamente sólida.
+     */
+    else if(
+      reqHits.length > 0 ||
+      totalGood >= 2
+    ){
+      tier = 1;
+    }
+
+    /*
+     * Débil:
+     * no existe evidencia suficiente de la competencia.
+     */
+    else{
+      tier = 0;
+    }
+  }
+
+  return {
+    tier: tier,
+    flags: softNeg,
+    matched: [...present]
+  };
 }
 
 /* Detección de personalización: ¿la respuesta del asesor retoma vocabulario
