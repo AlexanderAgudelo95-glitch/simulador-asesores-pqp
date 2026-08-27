@@ -2183,7 +2183,9 @@ async function enviarResultadosGoogleSheets() {
 if (participantData.enviadoGoogleSheets) return;
 participantData.enviadoGoogleSheets = true;
   
-  const datos = {
+ const datos = {
+    guardarResultado: true,
+
     participantId: participantData.participantId,
     nombre: participantData.nombre,
     correo: participantData.correo,
@@ -2371,6 +2373,8 @@ setTimeout(() => {
 
     // Datos que enviaremos a Apps Script
     const datosPDF = {
+
+      guardarResultado: false,
 
       participantId: participantData.participantId,
       nombre: participantData.nombre,
